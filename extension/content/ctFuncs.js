@@ -338,7 +338,7 @@ https://aebits.win/aeBattleCalc?aT=Arm:27,Las:27,Pla:20,Sld:17,Level:54.67&aS=FT
       var sn = econs.GetGmServerNameFromUrl(window.location.href);
       var gmServerJson = econs.GetServerJsonByName(sn);
 
-      var uri = 'http://' + gmServerJson.serverName + '.astroempires.com/' + url;
+      var uri = 'https://' + gmServerJson.serverName + '.astroempires.com/' + url;
       if (typeof postData != 'undefined') mode = 'POST';
       var conn = cPool.GetConnection();
 
