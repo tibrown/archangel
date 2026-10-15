@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS bases (
   research       VARCHAR(32) NULL,
   max_econ       VARCHAR(32) NULL,
   current_econ   VARCHAR(32) NULL,
-  trade          VARCHAR(128) NULL,
+  trade          TEXT NULL,
   last_pillaged  VARCHAR(32) NULL,
   stability      VARCHAR(32) NULL,
   wormhole       VARCHAR(16) NULL,
