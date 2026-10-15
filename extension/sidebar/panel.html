@@ -1,0 +1,549 @@
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="../css/bootstrap.min.css" />
+  <link rel="stylesheet" href="panel.css" />
+  <script src="../js/jquery-3.1.1.min.js"></script>
+  <!--script src="../js/bootstrap.min.js"></script-->
+  <script src="../js/countdown.js"></script>
+  <script src="../js/moment.js"></script>
+  <script src="../common/ext-constants.js"></script>
+  <script src="../common/classes.js"></script>
+  <script src="../common/logging.js"></script>
+  <script src="../common/Timer.js"></script>
+  <script src="DPanel.js"></script>
+  <script src="dsis-panel.js"></script>
+</head>
+
+<body>
+  <div style="width: 100%;" class="container-fluid main-div wrapper">
+    <h2>DSIS</h2>
+    (Version <label class="version"></label>)
+    <div class="DSISActive">
+      <b>DSIS Server:<span class="DSISActiveMsg"></span>
+        <span class="DSISHeartBeat"></span></b>
+      <div class="DSISErrorState"></div>
+      <div class="DSISIOState"></div>
+    </div>
+    <div class="ScoutRunning">
+      <b><span class="ActiveScoutMsg">No Active Scout</span></b>
+    </div>
+    <table>
+      <tr>
+        <th>
+          Player ID: <label id="lblPlayerId"></label>
+        </th>
+      </tr>
+      <!--tr>
+        <td>
+          <hr>
+        </td>
+      </tr-->
+      <tr>
+        <td>
+          <table style="display:block;">
+            <tr>
+              <th>
+                <a href="#" id="btnBookmarks">Bookmarks</a>
+              </th>
+            </tr>
+            <tr>
+              <td>
+                <div id="divAddBookmark"></div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <table id="tblBookmarks" class="BookmarksTable"></table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <hr>
+        </td>
+      </tr>
+      <tr>
+        <th>
+          <a id="BattleCalcUrl" href="#" class="menuButton">Open in Battle Calculator</a>
+        </th>
+      </tr>
+    </table>
+
+    <div id="divEmpireEvents" class="dsis-functions">
+      <h4>Empire Events Page</h4>
+      <b><label id="lblNumBases"></label></b>
+      <h5>DSIS Functions</h5>
+
+      <a href="#" class="menuSelect" menuItem="ScanGuildSystems">Guild Systems</a>
+      <div id='divGuildSystems' style="display: none;">
+        <table>
+          <tr>
+            <th>Galaxies</th>
+            <th>Regions</th>
+          </tr>
+          <tr>
+            <td>
+              <select id="gsCluster"></select>
+            </td>
+            <td>
+              <select id="gsGalaxy"></select>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <a href="#" id="btnScanGuildSystems">Scan</a>
+            </th>
+          </tr>
+        </table>
+      </div>
+      <br/>
+      <a href="#" class="menuSelect" menuItem="ScanList">Scan a List</a>
+
+      <div class="ScanList" class="dsis-functions">
+        <br />
+        <table>
+          <tr>
+            <th>Paste your list in the box and Submit</th>
+          </tr>
+          <tr>
+            <td>
+              <textarea id="txtScanList" rows="4"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="#" id="btnScanList">Submit List</a>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <br/>
+      <a href="#" class="menuItem" menuItem="ScanBaseRegions">Your Base Regions</a>
+      <br/>
+      <a href="#" class="menuItem" menuItem="ScanRegionsWithFleet">Regions With Fleet</a>
+      <br/>
+      <a href="#" class="menuItem" menuItem="ScanOccupiedRegions">Occupied Regions</a>
+      <br/>
+    </div>
+
+    <div id="divEmpireBases" class="dsis-functions">
+      <h4>Empire Bases Page</h4>
+    </div>
+
+    <div id="divEmpireFleets" class="dsis-functions">
+      <h4>Empire Fleets Page</h4>
+    </div>
+
+    <div id="divEmpireProduction" class="container dsis-functions">
+      <h4>Empire Production Page</h4>
+    </div>
+
+    <div id="divEmpireEconomy" class="container dsis-functions">
+      <h4>Empire Economy Page</h4>
+    </div>
+
+    <div id="divEmpireStructures" class="container dsis-functions">
+      <h4>Empire Structures Page</h4>
+    </div>
+
+    <div id="divEmpireTrade" class="container dsis-functions">
+      <h4>Empire Trade Page</h4>
+    </div>
+
+    <div id="divEmpireUnits" class="container dsis-functions">
+      <h4>Empire Units Page</h4>
+    </div>
+
+    <div id="divEmpireCapacities" class="container dsis-functions">
+      <h4>Empire Capacities Page</h4>
+    </div>
+
+    <div id="divEmpireTechnologies" class="container dsis-functions">
+      <h4>Empire Technologies Page</h4>
+    </div>
+
+    <div id="divEmpireScanners" class="container dsis-functions">
+      <h4>Empire Scanners Page</h4>
+    </div>
+
+    <div id="divSystem" class="container dsis-functions">
+      <h4>System Page</h4>
+      <a href="#" class="menuItem" menuItem="ParseSystem">Parse System</a>
+    </div>
+
+    <div id="divGalaxy" class="container dsis-functions">
+      <h4>Galaxy Page</h4>
+      <p id="pScoutComplete" style="display: none;">Scout Complete</p>
+      <a href="#" class="menuItem" menuItem="ParseGalaxy">Parse Galaxy (Passive)</a><br/>
+      <a href="#" class="menuItem" menuItem="SeedGalaxy" title="Only the First Time">Seed Galaxy</a><br/>
+
+      <div id="divAutoScout" class="container auto-scout">
+        <table>
+          <tr class="HideActiveScout">
+            <td colspan="2" class="menuButton">
+              <a href="#" class="menuSelect" id="DisperseScouts">Disperse Scouts</a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <table class="DefaultPrefs">
+                <tr>
+                  <th>Current Options</th>
+                </tr>
+                <tr>
+                  <td>
+                    <table>
+                      <tr>
+                        <th>Fleet Galaxy</th>
+                        <td>
+                          <select id="cFleetGalaxy" title="Where your scout fleet is"></select>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>Home LZ</th>
+                        <td>
+                          <input type="text" id="cHomeLz" size="13"/>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>Disband?</th>
+                        <td>
+                          <input type="checkbox" id="cDisbandScouts" title="Disband scouts when done instead of sending home"/>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>Max Scouts</th>
+                        <td>
+                          <span id="cMaxScouts"></span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>Delay</th>
+                        <td>
+                          <span id="cConnectionDelay"></span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>Pickup Strays</th>
+                        <td>
+                          <span id="cPickupStrays"></span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>How to Handle Strays?</th>
+                        <td>
+                          <span id="cHandleStrays"></span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr class="ActiveScout" style="display: none;">
+            <th>
+              <span>Scouts In Progress</span>
+            </th>
+          </tr>
+          <tr class="ActiveScout">
+            <td>
+              <a href="#" id="PauseScout">Pause Scout</a>
+            </td>
+          </tr>
+          <tr class="ActiveScout" style="display: none;">
+            <th>
+              <span>Galaxy</span>
+            </th>
+            <td>
+              <label id="acGalaxy"></label>
+            </td>
+          </tr>
+          <!--tr class="ActiveScout" style="display: none;">
+            <th>
+              <span>Start Location</span>
+            </th>
+            <td>
+              <span id="acStartLocation"></span>
+            </td>
+          </tr-->
+          <tr class="ActiveScout" style="display: none;">
+            <th>
+              <span>Regions Scouted</span>
+            </th>
+            <td>
+              <span id="acRegionsScouted"></span>
+            </td>
+          </tr>
+          <tr class="ActiveScout" style="display: none;">
+            <th>
+              <span>Regions Remaining</span>
+            </th>
+            <td>
+              <span id="acRegionsRemaining"></span>
+            </td>
+          </tr>
+          <tr class="ActiveScout" style="display: none;">
+            <th>
+              <span>Scouts Deployed</span>
+            </th>
+            <td>
+              <span id="acScoutsDeployed"></span>
+            </td>
+          </tr>
+          <tr class="ActiveScout" style="display: none;">
+            <th>
+              <span>Max to Deploy</span>
+            </th>
+            <td>
+              <span id="acMaxScouts"></span>
+            </td>
+          </tr>
+          <tr class="ActiveScout" style="display: none;">
+            <th class="IfStopped" style="display: none;">
+              <span>Continue Scout</span>
+            </th>
+            <td class="menuButton IfStopped" style="display: none;">
+              <a href="#" class="menuItem" menuItem="ContinueScout">Continue</a>
+            </td>
+          </tr>
+          <tr class="ActiveScout" style="display: none;">
+            <th colspan="2">
+              <b id="ScoutStatus"></b>
+            <th>
+          </tr>
+
+          <tr class="ActiveScout" style="display: none;">
+            <th>Reset Scout</th>
+            <td>
+              <a href="#" id="btnResetScout" style="padding-left: 10px;">Reset</a>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="dialog" style="display: none;"></div>
+
+
+    <div id="divRegion" class="container dsis-functions">
+      <h4>Region Page</h4>
+      <a href="#" class="menuItem" menuItem="ParseRegion">Parse Region</a>
+    </div>
+
+    <div id="divAstro" class="container dsis-functions">
+      <h4>Astro Page</h4>
+      <a href="#" class="menuItem" menuItem="ParseFleetDetails">Parse Fleet Details</a>
+    </div>
+
+    <div id="divBase" class="container dsis-functions">
+      <h4>Base Page</h4>
+      <a href="#" class="menuItem" menuItem="ParseFleetDetails">Parse Fleet Details</a>
+    </div>
+
+    <div id="divGuild" class="container dsis-functions">
+      <h4>Guild Page</h4>
+      <p id="guildBob"></p>
+    </div>
+
+    <div id="divCredits" class="container dsis-functions">
+      <h4>Credits Page</h4>
+    </div>
+
+    <div id="divAccount" class="container dsis-functions">
+      <h4>Account Page</h4>
+      Check Settings
+    </div>
+
+    <div id="divProfile" class="container dsis-functions">
+      <h4>Profile Page</h4>
+      <table>
+        <tr>
+          <td id="bob"></td>
+        </tr>
+        <tr>
+          <th>
+            <h3>Player Summary</h3>
+          </th>
+        </tr>
+        <tr>
+          <th>
+            <h4>Techs<h4>
+          </th>
+        </tr>
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <th><b>Armour</b></th>
+                <td>
+                  <span id="lblTechArmour"></span>
+                </td>
+              </tr>
+          <th>Disruptor</th>
+          <td>
+            <span id="lblTechDisruptor"></span>
+          </td>
+        </tr>
+        <th>Ion</th>
+        <td>
+          <span id="lblTechIon"></span>
+        </td>
+        </tr>
+        <th>Laser</th>
+        <td>
+          <span id="lblTechLaser"></span>
+        </td>
+        </tr>
+        <th>Missiles</th>
+        <td>
+          <span id="lblTechMissiles"></span>
+        </td>
+        </tr>
+        <th>Photon</th>
+        <td>
+          <span id="lblTechPhoton"></span>
+        </td>
+        </tr>
+        <th>Plasma</th>
+        <td>
+          <span id="lblTechPlasma"></span>
+        </td>
+        </tr>
+        <th>Shielding</th>
+        <td>
+          <span id="lblTechShielding"></span>
+        </td>
+        </tr>
+      </table>
+      </td>
+      </tr>
+      <tr>
+        <th>
+          <h4>Bases</h4>
+        </th>
+      </tr>
+      <tr>
+        <td>
+          <table id="tblBases">
+
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <th>
+          <h4>Fleet</h4>
+        </th>
+      </tr>
+      <td>
+        <table id="tblFleet"></table>
+      </td>
+      </table>
+    </div>
+
+    <div id="divFleet" class="container dsis-functions">
+      <h4>Fleet Page</h4>
+      <table class='FleetGates' style="display: none;">
+        <tr>
+          <th colspan="2">Gates</th>
+        </tr>
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td>
+                  <a href="#" class="menuItem" menuItem="ClosestGate">Closest</a>
+                <td>
+                <td>
+                  <a href="#" class="menuItem" menuItem="FastestGate">Fastest</a>
+                <td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td colspan="2">
+            <label class='JgDetails'></label>
+          </td>
+        </tr>
+        <tr>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <th>Route Suggestions</th>
+          <td>
+            <a href="#" class="menuItem" menuItem="GetRoute">Suggest</a>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <table id="RouteDetails" class="route"></table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <div class="launcher route" style="display: none;">
+    <table>
+      <tr>
+        <th>
+          Launch Type
+        </th>
+        <td>
+          <select id="LaunchType">
+            <option value="Launch">Launch Time</option>
+            <option value="Land">Land Time</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <th>
+          Server/Local time?
+        </th>
+        <td>
+          <select id="TimeType">
+            <option value="Local">Local Time</option>
+            <option value="Server">Server Time</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          <table>
+            <tr>
+              <th>Launch/Land Time</th>
+              <td>
+                <input type="text" id="LaunchTime" />
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <th>
+          Timer
+        </th>
+        <td>
+          <span id="LaunchTimer" class="timer">No Timer set</span>
+        </td>
+      </tr>
+      <th colspan="2">
+        <a href="#" id="btnStartLauncher">Start</a>
+      </th>
+      </tr>
+    </table>
+  </div>
+  <div id="divFleetSummary"></div>
+  <div id="divStatus" class="row displaystatus">
+</body>
+
+</html>

@@ -1,0 +1,80 @@
+// Base classes - when we need the same format many times.
+
+// class for storing tab metadata for tabs, in background
+var TabMetadata = function(_tabId, _windowId) {
+  this.TabId = _tabId;
+  this.WindowId = _windowId;
+  this.Url = null;
+  this.GmServerJson = null;
+  this.GmServer = null;
+  this.IsOptions = false;
+  this.IsDsis = false;
+  this.IsGmServer = false;
+  this.IsPopup = false;
+
+  this.GetUrl = function(callback) {
+    chrome.tabs.query({
+        active: true,
+        windowId: chrome.windows.WINDOW_ID_CURRENT
+      })
+      .then(tabs => chrome.tabs.get(tabs[0].id))
+      .then(tab => {
+        this.url = new URL(tab.url);
+        if (this.url.href.match(/options.html/)) this.IsOptions = true;
+        if (this.url.href.match(/angeldsis.com/)) this.IsDsis = true;
+        if (this.url.href.match(/astroempires.com/)) this.IsGmServer = true;
+        if (this.url.href.match(/about:blank/)) this.IsPopup = true;
+        econs.CallBack(callback, this.url);
+      });
+  }
+
+}
+
+
+var ScoutFleet = function(_fleetId, _orig, _dest, _size) {
+
+  return {
+    fleetId: _fleetId,
+    origination: _orig,
+    location: _orig,
+    destination: _dest,
+    arrival: 0,
+    size: _size,
+    scannedRegion: null
+  }
+}
+
+// dataupload class
+var DataUpload = function(_gmServer, _data) {
+  this.gmServer = _gmServer;
+  this.data = _data;
+}
+
+// upload to dsis db -- the json dsis is expecting
+var DsisDbUpload = function() {
+  this.serv = '';
+  this.servid = '';
+  this.load_time = '';
+  this.local_load_time = '';
+  this.local_upload_time = Date.now();
+  this.data = [];
+  this.extra_data = {};
+  this.sign = '';
+}
+// our tab-port data
+// not sure if we need the port itself
+var TabData = function(_port, _serverType, _gmServer = null) {
+  this.id = _port.sender.tab.windowId + '-' + _port.sender.tab.id;
+  this.windowId = _port.sender.tab.windowId;
+  this.tabId = _port.sender.tab.id;
+  this.port = _port;
+  this.gmServer = _gmServer;
+  this.serverType = _serverType;
+  this.logEntries = [];
+}
+// standard message class
+var Message = function(_target, _action, _args) {
+  this.target = _target;
+  this.action = _action;
+  this.actionArgs = _args;
+}

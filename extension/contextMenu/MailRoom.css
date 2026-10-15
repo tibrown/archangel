@@ -1,0 +1,121 @@
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  height: 90%;
+  font: caption;
+  background-color: #000000;
+  font: bold 12px verdana,arial;
+  color: #ffffff;
+}
+
+input[type=submit], input[type=text] {
+  padding: 5px;
+  font-size: 12px;
+  float: left;
+  border: 0;
+  display: block;
+  margin: 0;
+}
+
+hr {
+  border-style: double;
+  border-width: 1px;
+  border-color: white;
+}
+
+.BookmarksTable {
+  display: none;
+  border-style: inset;
+  border-width: 1px;
+  border-color: white;
+  width: 100%;
+}
+
+p {
+  margin: 1em 2em;
+}
+
+a {
+  color: orange;
+  text-decoration: none;
+}
+
+  a:hover {
+    color: lightgreen;
+    text-decoration: none;
+  }
+
+.dsis-functions {
+  display: none;
+}
+
+.main-div {
+  padding-left: 30px;
+}
+
+.menuButton {
+  padding-left: 3px;
+  color: orange;
+}
+
+.menuItem, .menuSelect {
+  color: orange;
+}
+
+.displaystatus {
+  padding-top: 20px;
+  color: yellow;
+}
+
+.displayoptions {
+  padding-top: 20px;
+  padding-left: 20px;
+  color: white;
+}
+
+.display-col {
+  min-width: 100%;
+}
+
+.DSISActive {
+  display: none;
+  color: lightgreen;
+  padding-bottom: 5px;
+}
+
+.DSISErrorState {
+  color: red;
+  background-color: lightyellow;
+}
+
+.DSISIOState {
+  color: lightgreen;
+  background-color: black;
+}
+
+.ScanList {
+  display: none;
+}
+
+.ActiveScoutMsg {
+  color: cyan;
+  padding-bottom: 5px;
+}
+
+.wrapper {
+  position: relative;
+}
+
+.bottom {
+  position: absolute;
+  bottom: 0;
+}
+
+.nodisplay {
+  display: none;
+}

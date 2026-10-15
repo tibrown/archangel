@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="../options.css" />
+  <script src="../../js/jquery-3.1.1.min.js"></script>
+  <script src="../../js/moment.js"></script>
+  <script src="../../common/ext-constants.js"></script>
+  <script src="../../common/classes.js"></script>
+  <script src="../../common/logging.js"></script>
+  <script src="ScoutOptions.js"></script>
+</head>
+
+<body>
+  <div class="container-fluid main-div">
+    <h1>Scouting Options</h1>
+    <table>
+      <tr>
+        <td>
+          <table>
+            <tr>
+              <td>
+                <table id="divOptions" class="row displayOptions">
+                  <tr>
+                    <td>
+                      <table class="Options">
+                        <tr>
+                          <th>Auto Scout</th>
+                        </tr>
+                        <tr>
+                          <td>
+                            <table>
+                              <tr>
+                                <th>Max Scouts To Deploy</th>
+                                <td>
+                                  <select id="optMaxScouts" style="width: 80px">
+                                  </select>
+                                </td>
+                              </tr>
+                              <tr>
+                                <th>Pick Up Stray Scouts?</th>
+                                <td>
+                                  <input type="checkbox" id="chkPickupStrays"/>
+                                </td>
+                              </tr>
+                              <tr class="HandleStrays">
+                                <th colspan="2" title="When picking up strays">Honor Max Scouts?</th>
+                              </tr>
+                              <tr class="HandleStrays">
+                                <td colspan="2">
+                                  <select id="selHonorMax" style="width: 170px">
+                                    <option value="honor" selected>Not to exceed Max</option>
+                                    <option value="skip">Skip "busy" scouts</option>
+                                    <option value="all">Get them all</option>
+                                  </select>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td colspan="2">
+                                  <a href="#" id="btnUpdatePreferences" class="menuButton">Update</a>
+                                  <span class="notify"></span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div><!-- The container -->
+</body>
+
+</html>

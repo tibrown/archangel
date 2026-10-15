@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="EmpireFleet.css" />
+  <script src="../js/jquery-3.1.1.min.js"></script>
+  <script src="../js/moment.js"></script>
+  <script src="../common/ext-constants.js"></script>
+  <script src="../common/classes.js"></script>
+  <script src="../common/logging.js"></script>
+  <script src="../common/Ships.js"></script>
+  <script src="../common/dsisRequests.js"></script>
+  <script src="../common/Gather.js"></script>
+  <script src="EmpireFleet.js"></script>
+</head>
+
+<body>
+  <div class="main-div">
+    <table>
+      <tr>
+        <th>
+          Empire Fleet Functions <span id="loading" href="#">Loading</span>
+          <a href="#" id="btnGather">Gather</a>
+          <a href="#" id="btnReset" style="display: none;">Reset</a>
+        </th>
+      </tr>
+      <tr>
+        <td>
+          <table id='FleetStats'>
+            <tr>
+              <th title="Fleet" style="border: #000066 solid 1px; border-width: 1 1 1 1;">Fleet</th>
+              <th title="Location" style="border: #000066 solid 1px; border-width: 1 1 1 1;">Location</th>
+              <th title="Fighters" style="border: #000066 solid 1px; border-width: 1 1 1 1;">Fighters</th>
+              <th title="Bombers" style="border: #000066 solid 1px; border-width: 1 1 1 1;">BO</th>
+              <th title="Heavy Bombers" style="border: #000066 solid 1px; border-width: 1 1 1 1;">HB</th>
+              <th title="Ion Bombers" style="border: #000066 solid 1px; border-width: 1 1 1 1;">IB</th>
+              <th title="Corvette" style="border: #000066 solid 1px; border-width: 1 1 1 1;">CV</th>
+              <th title="Recycler" style="border: #000066 solid 1px; border-width: 1 1 1 1;">RC</th>
+              <th title="Destroyer" style="border: #000066 solid 1px; border-width: 1 1 1 1;">DE</th>
+              <th title="Frigate" style="border: #000066 solid 1px; border-width: 1 1 1 1;">FR</th>
+              <th title="Ion Frigate" style="border: #000066 solid 1px; border-width: 1 1 1 1;">IF</th>
+              <th title="Scout Ship" style="border: #000066 solid 1px; border-width: 1 1 1 1;">SS</th>
+              <th title="Outpost Ship" style="border: #000066 solid 1px; border-width: 1 1 1 1;">OS</th>
+              <th title="Cruiser" style="border: #000066 solid 1px; border-width: 1 1 1 1;">CR</th>
+              <th title="Carrier" style="border: #000066 solid 1px; border-width: 1 1 1 1;">CA</th>
+              <th title="Heavy Cruiser" style="border: #000066 solid 1px; border-width: 1 1 1 1;">HC</th>
+              <th title="Battleship" style="border: #000066 solid 1px; border-width: 1 1 1 1;">BS</th>
+              <th title="Fleet Carrier" style="border: #000066 solid 1px; border-width: 1 1 1 1;">FC</th>
+              <th title="Dreadnought" style="border: #000066 solid 1px; border-width: 1 1 1 1;">DN</th>
+              <th title="Titan" style="border: #000066 solid 1px; border-width: 1 1 1 1;">TI</th>
+              <th title="Leviathan" style="border: #000066 solid 1px; border-width: 1 1 1 1;">LE</th>
+              <th title="Death Star" style="border: #000066 solid 1px; border-width: 1 1 1 1;">DS</th>
+              <th>Total</th>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="GatherStatus"></div>
+        <td>
+      </tr>
+    </table>
+  </div>

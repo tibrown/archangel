@@ -1,0 +1,94 @@
+{
+  "manifest_version": 3,
+  "name": "DSISArchangel",
+  "description": "DSIS addon for AE (local MySQL port)",
+  "version": "0.3.0",
+  "icons": {
+    "256": "icons/lightning.png"
+  },
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "action": {
+    "default_icon": {
+      "256": "icons/lightning.png"
+    },
+    "default_title": "DSIS Archangel"
+  },
+  "side_panel": {
+    "default_path": "sidebar/panel.html"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "js/jquery-3.1.1.min.js",
+        "js/moment.js",
+        "common/classes.js",
+        "common/preferences.js",
+        "common/Timer.js",
+        "common/ext-constants.js",
+        "common/logging.js",
+        "content/ct-globals.js",
+        "common/ServerDataUtil.js",
+        "common/uat.js"
+      ],
+      "matches": [
+        "*://*.astroempires.com/*"
+      ]
+    },
+    {
+      "js": [
+        "content/Region.js",
+        "content/Connection.js",
+        "content/ctFuncs.js",
+        "content/fleetOperations.js",
+        "common/Storage.js",
+        "content/ct-comms.js",
+        "content/parse.js",
+        "content/pageUI.js",
+        "common/ActiveScout.js",
+        "content/autoScout.js",
+        "content/fleetStats.js",
+        "common/Ships.js",
+        "common/Gather.js",
+        "common/dsisRequests.js",
+        "content/dsisU.js",
+        "common/Gates.js",
+        "common/Launcher.js",
+        "content/BuildHints.js",
+        "content/GateHints.js",
+        "content/SpyDetect.js",
+        "common/Bookmarks.js",
+        "common/Mail.js",
+        "common/ServerData.js",
+        "common/ServerDataUtil.js",
+        "content/content.js"
+      ],
+      "matches": [
+        "*://*.astroempires.com/*"
+      ]
+    }
+  ],
+  "permissions": [
+    "storage",
+    "tabs",
+    "contextMenus",
+    "sidePanel",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "*://*.astroempires.com/*",
+    "http://marjis.com:8010/*",
+    "http://127.0.0.1:8010/*"
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y"
+      }
+    }
+  },
+  "options_ui": {
+    "page": "options/options.html"
+  }
+}
