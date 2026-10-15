@@ -432,6 +432,8 @@ var Gather = function() {
 
   this.DoGather = function() {
     try {
+      // Do not paint gather UI while a spy script is present.
+      if (spyDetect.IsSpyFound()) return;
       var maindest = $('#fleetDest').val();
       var gates = null; //bridge.get_gates();
       $('tr input[id*="FL' + '"][id^="inpF"][value!="0"]').css('background-color', 'blue');

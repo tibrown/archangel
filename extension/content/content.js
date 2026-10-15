@@ -36,6 +36,10 @@ var AheadOfServerTime = false;
 
 $(document).ready(function() {
   try {
+    // Restore any prior spy-script detection before we touch the DOM, and scan
+    // the current page for the spy markers.
+    spyDetect.Restore();
+
     ctF.SetServerOffset();
 
     ctG.SendingPlayerId = $("#account")
@@ -765,10 +769,12 @@ var ct = {
             ctF.FlushUpload();
           } else {
             $(".DTimer").remove();
-            $(".top").append(
-              '<tr class="DTimer"><td colspan="9"><center><span id="DTimer">*</span></center></td></tr>'
-            );
-            $().prependTo("form center");
+            if (!spyDetect.IsSpyFound()) {
+              $(".top").append(
+                '<tr class="DTimer"><td colspan="9"><center><span id="DTimer">*</span></center></td></tr>'
+              );
+              $().prependTo("form center");
+            }
             message.actionArgs.FleetGalaxy = ct.GetLocation();
             message.actionArgs.HomeLz = "";
             var maxGal = $("#map2_Fav-Galaxies a").last();

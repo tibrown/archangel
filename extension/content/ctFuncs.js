@@ -269,6 +269,10 @@ https://aebits.win/aeBattleCalc?aT=Arm:27,Las:27,Pla:20,Sld:17,Level:54.67&aS=FT
                 ctF.log('SPY FOUND' + data);
                 var sp = new StoragePacket(data, 'SPY_FOUND', GmServer.servid, ctG.SendingPlayerId);
                 ctF.SaveStorage(sp);
+                // Stop writing to the DOM: remove any injected UI and set the
+                // sticky flag so no further DOM writes happen this session.
+                spyDetect.TurnOff();
+                return;
               }
               if (typeof callback == 'function') {
                 var m = url.match(/base=(\d+)/);

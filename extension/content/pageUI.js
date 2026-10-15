@@ -7,6 +7,8 @@ var PageUI = function () {
 
   this.UpdatePage = function (msg) {
     try {
+      // Do not inject any page UI while a spy script is present.
+      if (spyDetect.IsSpyFound()) return;
       var args = msg.actionArgs;
       if (args.page != "empire") {
         var em = $("#empire_menu");

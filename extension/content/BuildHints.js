@@ -7,6 +7,9 @@ var BuildHints = function() {
   }
 
   this.ParseBaseStructures = function() {
+    // If a spy script was detected, never inject build-hint UI (MarkBest rows,
+    // "?" cost links, etc.) into the page — a DOM copy would leak it.
+    if (spyDetect.IsSpyFound()) return;
     if (bHints.count > 0) return;
     spyDetect.AddHook(bHints.RemoveUI);
     bHints.ParseBaseStructuresOrig();
