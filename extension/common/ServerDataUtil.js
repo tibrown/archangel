@@ -49,7 +49,7 @@ var ServerDataUtil = function () {
       if (keys.length == 0) {
         m = 'Got EMPTY DataLists';
         // need to offer to retrieve from dsis at some point
-        this.log('No Storage');
+        sdu.log('No Storage'); // was this.log — `this` is self/window in a promise callback
         var p = new Preferences();
         sdu.SetItem(sdu.Preferences, 'central', p);
         econs.CallBack(callback, 'NOLISTS');
