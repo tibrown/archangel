@@ -399,11 +399,17 @@ https://aebits.win/aeBattleCalc?aT=Arm:27,Las:27,Pla:20,Sld:17,Level:54.67&aS=FT
   this.UpdatePage = function(msg) {
     try {
       if (typeof msg == 'undefined') msg = $('body');
+      // Strip <script> tags: jQuery .html() will try to execute them, which the
+      // game page's CSP blocks (script-src 'self') — the injected copy is only a
+      // visual refresh, so scripts are unnecessary.
+      var sanitize = function(html) {
+        return $('<div>').append($(html)).find('script').remove().end().html();
+      };
       // update top of ae oage
       var tab1 = msg.filter('.top').find('tr:eq(0)');
-      if (tab1) $('.top tr:eq(0)').html(tab1.html());
+      if (tab1) $('.top tr:eq(0)').html(sanitize(tab1.html()));
       var tab2 = msg.find('marquee');
-      if (tab2) $('marquee').html(tab2.html());
+      if (tab2) $('marquee').html(sanitize(tab2.html()));
       // look for map
       var map = $('#myCanvas', msg);
       var lmap = $('#myCanvas');
