@@ -23,7 +23,7 @@ var BuildHints = function() {
       var basemetal = /bases metal\.\((\d+)\)/;
       var basefert = /capacity by bases fertility\.\((\d)\)/;
       var base_structures = $('#base_structures');
-      if (!base_structures) return;
+      if (!base_structures || base_structures.length === 0) return;
       var rows = base_structures.find('tr');
       var items = base_structures.find('.item');
       var regex = /item_([^ ]*)/;
@@ -85,8 +85,11 @@ var BuildHints = function() {
       if (active.length) {
         var row = $(active[0]).parent();
         var item_div = $('.item', row);
+        if (item_div.length === 0) return;
         var res = regex.exec(item_div[0].className);
+        if (!res) return;
         var structure = res[1];
+        if (!page_state.structures[structure]) return;
         page_state.structures[structure].level = page_state.structures[structure].level + 1;
         page_state.structures[structure].cost = page_state.structures[structure].cost * 1.5;
         bHints.log('in-progress structure found');
