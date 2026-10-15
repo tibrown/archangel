@@ -647,8 +647,8 @@ var ct = {
       var loc = null;
       if (region != null) {
         var b = $("b:contains(> Region)");
-        loc = b.text().match(/\((.+)\)/);
-        if (loc && loc.length > 0) loc = loc[1];
+        var match = (b.length && b.text()) ? b.text().match(/\((.+)\)/) : null;
+        loc = match ? match[1] : region[1];
       } else if (galaxy != null) {
         loc = $("b:contains(Galaxy )")
           .text()
