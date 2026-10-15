@@ -1,0 +1,18 @@
+[Unit]
+Description=DSIS Archangel local bridge (FastAPI -> MariaDB)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/tim/gitrepos/archangel/bridge
+ExecStart=/home/tim/gitrepos/archangel/bridge/start.sh
+ExecStop=/bin/kill -TERM $MAINPID
+StandardInput=null
+TimeoutStartSec=120
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
