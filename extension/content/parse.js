@@ -670,19 +670,6 @@ var Parser = function() {
       var gtfleetamt = parseInt(0); // guild
       var stfleetamt = parseInt(0); // self
       var ntfleetamt = parseInt(0); // neutral
-      var craters = system_table[0].querySelectorAll('img[alt="Volcanic"]');
-      var fake_list = [];
-      var loc_regex = /[A-Z]\d\d:\d\d:\d\d:\d\d/;
-      for (var x = 0; x < craters.length; x++) {
-        if (craters[x].src.indexOf('Volcanic') != -1) continue; // its a real volcanic
-        fake_list.push(loc_regex.exec(craters[x].title)[0]);
-      }
-      if (fake_list.length > 0) ctF.PushUpload({
-        request: {
-          mode: 'fake_list',
-          coords: fake_list
-        }
-      });
 
       system_table.find('.astro_asteroid-belt').each(function() {
         var iA = $(this).parent().get(0);

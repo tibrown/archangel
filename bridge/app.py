@@ -510,6 +510,11 @@ async def dataupload(dbname: str, request: Request):
     for item in items:
         if not isinstance(item, dict):
             continue
+        # fake_list is a trap to catch bots/scripts. Never parse, store, or
+        # refer to it — drop the item entirely (don't even log to capture_events).
+        req = item.get("request")
+        if isinstance(req, dict) and req.get("mode") == "fake_list":
+            continue
         mode = _fan_out(item, servid, sending_id)
         db.upsert(
             "capture_events",
