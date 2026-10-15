@@ -363,7 +363,10 @@ https://aebits.win/aeBattleCalc?aT=Arm:27,Las:27,Pla:20,Sld:17,Level:54.67&aS=FT
   this.SetServerOffset = function() {
     try {
       var st = $('#server-time').text();
-      var mst = moment(st);
+      // Server renders e.g. "Oct 15 2026, 17:22:44". moment's generic ISO/RFC
+      // detection doesn't recognise that shape and logs a deprecation warning,
+      // so give it an explicit format (with the comma stripped) to parse cleanly.
+      var mst = moment(st.replace(',', ''), 'MMM D YYYY HH:mm:ss');
       var now = moment();
       var duration = moment.duration(now.diff(mst));
       if (duration < 0) {
