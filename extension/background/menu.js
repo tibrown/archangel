@@ -24,7 +24,7 @@ var DsisMenu = function (_globalName) {
   }
 
   this.Create = function(properties) {
-    chrome.contextMenus.create(properties, this.OnCreated);
+    chrome.contextMenus.create(properties, this.onCreated);
   }
 
 }
@@ -33,104 +33,96 @@ Create all the context menu items.
 */
 // pageMenu will be used for all of the context menu items
 var pageMenu = new DsisMenu('PageMenu');
-pageMenu.Create({
-  id: "status-log",
-  title: 'Status Log',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-var statuslog = 0;
-
-pageMenu.Create({
-  id: "mail-room",
-  title: 'Mail Room',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-var mailroom = 0;
-
-pageMenu.Create({
-  id: "add-bookmark",
-  title: 'Bookmark',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-
-pageMenu.Create({
-  id: "fleet-menu",
-  title: 'Fleet',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-
-pageMenu.Create({
-  parentId: 'fleet-menu',
-  id: "gather",
-  title: 'Gather',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-var gather = 0;
-
-pageMenu.Create({
-  parentId: "fleet-menu",
-  id: "super-scanners",
-  title: 'Super Scanners',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-var superscanners = 0;
-
-pageMenu.Create({
-  id: "options-menu",
-  title: 'Options',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-
-pageMenu.Create({
-  parentId: "options-menu",
-  id: "scout-options",
-  title: 'Scout Options',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-var scoutoptions = 0;
-
-pageMenu.Create({
-  parentId: "options-menu",
-  id: "misc-options",
-  title: 'Misc Options',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-var miscoptions = 0;
-
-
-pageMenu.Create({
-  id: "open-sidebar",
-  title: 'Toggle Sidebar',
-  contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-
-// tools menu, for the top tools menu items
 var toolsMenu = new DsisMenu('ToolsMenu');
-
-
-toolsMenu.Create({
-  id: "help-menu",
-  title: 'Archangel Help',
-  contexts: ["all"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
-toolsMenu.Create({
-  id: "reload",
-  title: 'Reload Archangel',
-  contexts: ["all"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"]
-});
+var statuslog = 0;
+var mailroom = 0;
+var gather = 0;
+var superscanners = 0;
+var scoutoptions = 0;
+var miscoptions = 0;
 var helpmenu = 0;
+
+// MV3: the service worker is ephemeral and re-runs this module on every wake,
+// but contextMenu items PERSIST. Remove prior items, then create fresh, so we
+// never hit "Cannot create item with duplicate id".
+chrome.contextMenus.removeAll(function () {
+  pageMenu.Create({
+    id: "status-log",
+    title: 'Status Log',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  pageMenu.Create({
+    id: "mail-room",
+    title: 'Mail Room',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  pageMenu.Create({
+    id: "add-bookmark",
+    title: 'Bookmark',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  pageMenu.Create({
+    id: "fleet-menu",
+    title: 'Fleet',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  pageMenu.Create({
+    parentId: 'fleet-menu',
+    id: "gather",
+    title: 'Gather',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  pageMenu.Create({
+    parentId: "fleet-menu",
+    id: "super-scanners",
+    title: 'Super Scanners',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  pageMenu.Create({
+    id: "options-menu",
+    title: 'Options',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  pageMenu.Create({
+    parentId: "options-menu",
+    id: "scout-options",
+    title: 'Scout Options',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  pageMenu.Create({
+    parentId: "options-menu",
+    id: "misc-options",
+    title: 'Misc Options',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  pageMenu.Create({
+    id: "open-sidebar",
+    title: 'Toggle Sidebar',
+    contexts: ["page", "image", "link"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  toolsMenu.Create({
+    id: "help-menu",
+    title: 'Archangel Help',
+    contexts: ["all"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+  toolsMenu.Create({
+    id: "reload",
+    title: 'Reload Archangel',
+    contexts: ["all"],
+    documentUrlPatterns: ["*://*.astroempires.com/*"]
+  });
+});
 
 
 // this keeps the user from opening more than one menuitem at a time

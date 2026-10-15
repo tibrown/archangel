@@ -73,7 +73,15 @@ var eConstants = function(isContent = false) {
     }
 
     this.GetGmServerNameFromUrl = function(url) {
-      var u = new URL(url);
+      // Called from the background with port.sender.url / tab.url, which can be
+      // empty or undefined while a tab is loading — `new URL('')` throws.
+      if (!url) return null;
+      var u;
+      try {
+        u = new URL(url);
+      } catch (e) {
+        return null;
+      }
       var m = u.host.match(/^(.+)\..+\./);
       if (m != null) return m[1];
       return null;
