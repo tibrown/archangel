@@ -121,12 +121,14 @@ var toolsMenu = new DsisMenu('ToolsMenu');
 toolsMenu.Create({
   id: "help-menu",
   title: 'Archangel Help',
-  contexts: ["tools_menu"]
+  contexts: ["all"],
+  documentUrlPatterns: ["*://*.astroempires.com/*"]
 });
 toolsMenu.Create({
   id: "reload",
   title: 'Reload Archangel',
-  contexts: ["tools_menu"]
+  contexts: ["all"],
+  documentUrlPatterns: ["*://*.astroempires.com/*"]
 });
 var helpmenu = 0;
 
