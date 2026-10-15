@@ -38,6 +38,25 @@ var dsisioF = new dsisIoFuncs();
 var dsisReq = new DsisRequests();
 var upL = new upload();
 var store = new Store();
+
+// MV3: chrome.*.sendMessage rejects ("Uncaught (in promise) ... Receiving end
+// does not exist") when there is no listener — e.g. a popup isn't open, or a
+// tab was navigated/bfcached. Wrap both so those rejections are swallowed; the
+// returned promise is preserved so existing .then() chains keep working.
+(function () {
+  var swallow = function (p) {
+    if (p && typeof p.catch === 'function') p.catch(function () {});
+    return p;
+  };
+  var _tabSend = chrome.tabs.sendMessage;
+  chrome.tabs.sendMessage = function () {
+    return swallow(_tabSend.apply(chrome.tabs, arguments));
+  };
+  var _runSend = chrome.runtime.sendMessage;
+  chrome.runtime.sendMessage = function () {
+    return swallow(_runSend.apply(chrome.runtime, arguments));
+  };
+})();
 var bgF = new BgFuncs();
 
 var PopupWindowInfo = null;

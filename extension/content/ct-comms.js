@@ -75,6 +75,11 @@ var ctComms = function () {
       comms.port.onMessage.addListener(function (message, sender) {
         comms.ListenForBG(message, sender, sendResponse);
       });
+      comms.port.onDisconnect.addListener(function () {
+        // tab navigated/bfcached/closed — drop the dead port so we stop writing
+        comms.port = null;
+        comms.log('port disconnected');
+      });
     } catch (e) {
       lg.debug(e, 'Error in ConnectToBG:', {
         stack: true
@@ -84,6 +89,7 @@ var ctComms = function () {
 
   this.SendMessageToBG = function (msg, callback = null) {
     try {
+      if (!comms.port) return;
       if (ctG.TabData) {
         msg.actionArgs.from = ctG.TabData.TabKey;
         msg.actionArgs.tabData = ctG.TabData;

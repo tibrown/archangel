@@ -75,6 +75,9 @@ var bgComms = function() {
     try {
       var tabData = new TabData(port);
       port.onMessage.addListener(comms.PortOnMessageListener);
+      port.onDisconnect.addListener(function () {
+        comms.RemovePortFromList(tabData.id);
+      });
 
       comms.log('Tab Data:' + JSON.stringify(tabData).substring(0, 50));
       // determine which ae server this port is talking to
