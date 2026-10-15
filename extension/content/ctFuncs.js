@@ -410,7 +410,15 @@ https://aebits.win/aeBattleCalc?aT=Arm:27,Las:27,Pla:20,Sld:17,Level:54.67&aS=FT
       // game page's CSP blocks (script-src 'self') — the injected copy is only a
       // visual refresh, so scripts are unnecessary.
       var sanitize = function(html) {
-        return $('<div>').append($(html)).find('script').remove().end().html();
+        // Strip <script> tags (jQuery .html() would try to execute them, which
+        // the game's CSP blocks) without ever handing the string to a CSS
+        // selector parser. Native innerHTML on a detached node parses HTML
+        // exactly, never selects, and never runs scripts.
+        if (html == null) return '';
+        var d = document.createElement('div');
+        d.innerHTML = html;
+        $(d).find('script').remove();
+        return d.innerHTML;
       };
       // update top of ae oage
       var tab1 = msg.filter('.top').find('tr:eq(0)');
