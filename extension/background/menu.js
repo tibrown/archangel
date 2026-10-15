@@ -111,8 +111,7 @@ pageMenu.Create({
   id: "open-sidebar",
   title: 'Toggle Sidebar',
   contexts: ["page", "image", "link"],
-  documentUrlPatterns: ["*://*.astroempires.com/*"],
-  command: "_execute_sidebar_action"
+  documentUrlPatterns: ["*://*.astroempires.com/*"]
 });
 
 // tools menu, for the top tools menu items
