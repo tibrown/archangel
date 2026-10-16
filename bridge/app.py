@@ -543,7 +543,12 @@ async def parse_script(dbname: str, request: Request):
     # the only seeded server; revisit if SERVERS grows.
 
     def result(payload):
-        return {"status": "OK", "data": payload}
+        # The extension's DsisRequests.MakeRequest already wraps the HTTP body
+        # in {status:'OK', data: <body>} before handing it to the caller, and
+        # every parse/script caller reads response.data.<field> directly. So the
+        # body must be the bare payload — NOT wrapped in {status:'OK', data:...}
+        # (that would double-wrap and make response.data.<field> undefined).
+        return payload
 
     if mode == "jg_search":
         # Closest/fastest jump-gate route. With no gate data yet, return the
