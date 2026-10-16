@@ -9,7 +9,10 @@
 //
 // This object holds a sticky flag, kept in window.sessionStorage so it is
 // available synchronously before the first DOM write on a freshly-navigated
-// page, and mirrored to chrome.storage.session (survives tab reload/keep-alive).
+// page, and mirrored to chrome.storage.local so it survives keep-alive. Content
+// scripts cannot use chrome.storage.session ("Access to storage is not allowed
+// from this context") — only the extension's own trusted contexts can — so the
+// mirror uses local, which content scripts are permitted to access.
 // It also keeps a set of "turn off" hooks that remove any DOM the extension has
 // already injected on the current page.
 
@@ -26,7 +29,9 @@ var SpyDetect = function () {
       if (window.sessionStorage) window.sessionStorage.setItem('dsis_spy_found', '1');
     } catch (e) { /* storage unavailable — flag stays in-memory for this page */ }
     try {
-      chrome.storage.session.set({ dsis_spy_found: true });
+      chrome.storage.local.set({ dsis_spy_found: true }, function () {
+        if (chrome.runtime.lastError) void chrome.runtime.lastError; // swallow "not allowed from this context"
+      });
     } catch (e) { /* ignore */ }
     $.each(turnOffHooks, function (index, hook) {
       try {
@@ -55,7 +60,7 @@ var SpyDetect = function () {
     } catch (e) { /* ignore */ }
     self.ScanDocument();
     try {
-      chrome.storage.session.get('dsis_spy_found', function (s) {
+      chrome.storage.local.get('dsis_spy_found', function (s) {
         if (s && s.dsis_spy_found) self._off = true;
       });
     } catch (e) { /* ignore */ }
