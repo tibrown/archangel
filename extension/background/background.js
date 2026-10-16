@@ -183,7 +183,10 @@ chrome.runtime.onMessage.addListener(function(messageJson, sender, sendResponse)
 
       if(action == 'HandShake') {
         var gs = bgF.GetGmServer(messageJson.actionArgs.ServerName);
-
+        if (!gs) {
+          bgF.log('HandShake: no GmServer for ' + messageJson.actionArgs.ServerName);
+          return;
+        }
         gs.playerId = messageJson.actionArgs.SendingPlayerId;
         econs.SendingPlayerId = messageJson.actionArgs.SendingPlayerId;
         // LOCAL PORT: attach the bridge to the specific player id for this tab

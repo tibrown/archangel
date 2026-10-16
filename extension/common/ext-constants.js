@@ -53,22 +53,31 @@ var eConstants = function(isContent = false) {
 
    this.GetGmServer = function(serverName) {
       try {
+        if (!serverName) return null;
         var gs = _gmServerList[serverName];
         if (typeof gs == 'undefined') {
           var g = new GmServer();
+          // serverName is always knowable (we parsed it from the URL); the
+          // servid/galaxy data are filled from the registry when the async
+          // getservers has resolved. For a server not yet seen there, fall back
+          // to a name-only GmServer so HandShake/upload never null-deref — the
+          // bridge resolves the real servid from the name on upload.
           var serverJson = econs.GetServerJsonByName(serverName);
-          g.serverName = serverJson.serverName;
-          g.serv = serverJson.serv;
-          g.servid = serverJson.servid;
-          g.galaxies = serverJson.galaxies;
+          g.serverName = serverName;
+          if (serverJson != null) {
+            g.serv = serverJson.serv;
+            g.servid = serverJson.servid;
+            g.galaxies = serverJson.galaxies;
+          }
           _gmServerList[serverName] = g;
-          lg.log('econs.GetGmServer:added:' + g.serverName + ' to list, servid:' + +_gmServerList[serverName].servid);
+          lg.log('econs.GetGmServer:added:' + g.serverName + ' to list, servid:' + _gmServerList[serverName].servid);
         }
         return _gmServerList[serverName];
       } catch (e) {
         lg.debug(e, 'Error in econs.GetGmServer:', {
           stack: true
         });
+        return null;
       }
     }
 

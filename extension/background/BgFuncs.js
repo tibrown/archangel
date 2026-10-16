@@ -301,9 +301,11 @@ var BgFuncs = function () {
   }
 
   this.GetGmServer = function (sn) {
+    if (!sn) return null;
     var gs = sdu.GetItem(sdu.GmServer, sn);
 
     if (!gs) gs = econs.GetGmServer(sn);
+    if (!gs) return null;
 
     // LOCAL PORT: attach the local bridge so uploads are never gated.
     return bgF.EnsureLocalDsis(gs);

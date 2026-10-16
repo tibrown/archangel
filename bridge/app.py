@@ -28,18 +28,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Helion is the only server we care about for now. servid is arbitrary but
-# stable; the extension only needs a consistent integer key.
-SERVERS = [
-    {"server": "helion", "servid": 1, "galaxyData": None},
-]
-SERVER_BY_NAME = {s["server"]: s["servid"] for s in SERVERS}
+# Server registry is backed by the `servers` table (NOT a hardcoded list), so the
+# bridge works for ANY *.astroempires.com server. A server gets a row (and a
+# stable servid) the first time its name appears in an upload; getservers then
+# hands the full list to the extension. Helion is seeded on first boot purely to
+# preserve the servid=1 rows captured before the registry existed.
+def _server_registry_init():
+    if db.query_one("SELECT COUNT(*) AS c FROM servers")["c"] == 0:
+        db.execute("INSERT INTO servers (servid, server_name) VALUES (1, 'helion')")
+        log.info("server_registry: seeded helion (servid 1)")
+
+
+_server_registry_init()
 
 
 def _servid_from_name(name):
+    """Resolve a server name to its servid, auto-registering unknown servers.
+
+    Case-insensitive lookup in the `servers` table. Unknown servers get a fresh
+    row with the next available servid, so any *.astroempires.com server can be
+    captured without a config change.
+    """
     if not name:
         return 0
-    return SERVER_BY_NAME.get(name.lower(), 0)
+    name = name.strip().lower()
+    row = db.query_one("SELECT servid FROM servers WHERE LOWER(server_name) = %s", (name,))
+    if row:
+        return row["servid"]
+    # register unknown server with the next free servid
+    maxrow = db.query_one("SELECT COALESCE(MAX(servid), 0) AS m FROM servers")
+    servid = maxrow["m"] + 1
+    db.execute(
+        "INSERT INTO servers (servid, server_name) VALUES (%s, %s)",
+        (servid, name),
+    )
+    log.info("server_registry: registered new server %s (servid %s)", name, servid)
+    return servid
 
 
 def _j(v):
@@ -95,8 +119,14 @@ async def health():
 @app.post("/dsisscripts/load/getservers")
 async def getservers():
     # The extension iterates resp.data directly (MakeGmServerJsonObjs),
-    # expecting a bare JSON array.
-    return JSONResponse(SERVERS)
+    # expecting a bare JSON array. Serve the full registry so any registered
+    # server (and thus any *.astroempires.com server the user has flown in) is
+    # known to the extension.
+    rows = db.query(
+        "SELECT server_name AS server, servid, galaxy_data AS galaxyData "
+        "FROM servers ORDER BY servid"
+    )
+    return JSONResponse(rows)
 
 
 @app.get("/{dbname}")
