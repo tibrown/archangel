@@ -13,18 +13,30 @@ var TabMetadata = function(_tabId, _windowId) {
   this.IsPopup = false;
 
   this.GetUrl = function(callback) {
+    var self = this;
     chrome.tabs.query({
         active: true,
         windowId: chrome.windows.WINDOW_ID_CURRENT
       })
-      .then(tabs => chrome.tabs.get(tabs[0].id))
-      .then(tab => {
-        this.url = new URL(tab.url);
-        if (this.url.href.match(/options.html/)) this.IsOptions = true;
-        if (this.url.href.match(/angeldsis.com/)) this.IsDsis = true;
-        if (this.url.href.match(/astroempires.com/)) this.IsGmServer = true;
-        if (this.url.href.match(/about:blank/)) this.IsPopup = true;
-        econs.CallBack(callback, this.url);
+      .then(function (tabs) {
+        if (!tabs || !tabs.length) throw new Error('no active tab');
+        return chrome.tabs.get(tabs[0].id);
+      })
+      .then(function (tab) {
+        if (!tab || !tab.url) throw new Error('no tab url');
+        return new URL(tab.url);
+      })
+      .then(function (url) {
+        self.Url = url;
+        if (url.href.match(/options.html/)) self.IsOptions = true;
+        if (url.href.match(/angeldsis.com/)) self.IsDsis = true;
+        if (url.href.match(/astroempires.com/)) self.IsGmServer = true;
+        if (url.href.match(/about:blank/)) self.IsPopup = true;
+        econs.CallBack(callback, self.Url);
+      })
+      .catch(function () {
+        // benign — no active tab or no resolvable URL yet (e.g. about:blank);
+        // skip this activation rather than leaving an unhandled rejection.
       });
   }
 
