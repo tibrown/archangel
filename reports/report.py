@@ -45,14 +45,15 @@ def fmt_structures(structures, levels):
 
 
 def report_bases():
-    """All bases, complete with their structure names and levels."""
+    """All bases grouped by server (helion, gamma, ...), with structures."""
     rows = db.query(
         """
-        SELECT coords, base_name, owner_name, terrain,
-               current_econ, production, construction, research,
-               structures, structure_levels
-          FROM bases
-         ORDER BY coords
+        SELECT s.server_name AS server, b.coords, b.base_name, b.owner_name, b.terrain,
+               b.current_econ, b.production, b.construction, b.research,
+               b.structures, b.structure_levels
+          FROM bases b
+          LEFT JOIN servers s ON s.servid = b.servid
+         ORDER BY s.server_name, b.coords
         """
     )
     if not rows:
@@ -60,9 +61,10 @@ def report_bases():
         return
 
     print(f"**Bases: {len(rows)}**\n")
-    print("| Coords | Base | Owner | Terrain | Econ | Prod | Constr | Research | Structures |")
-    print("|---|---|---|---|---|---|---|---|---|")
+    print("| Server | Coords | Base | Owner | Terrain | Econ | Prod | Constr | Research | Structures |")
+    print("|---|---|---|---|---|---|---|---|---|---|")
     for r in rows:
+        server = r["server"] or "?"
         coords = r["coords"] or "?"
         name = r["base_name"] or "—"
         owner = r["owner_name"] or "—"
@@ -72,7 +74,7 @@ def report_bases():
         con = r["construction"] or "—"
         res = r["research"] or "—"
         structures = fmt_structures(r["structures"], r["structure_levels"])
-        print(f"| {coords} | {name} | {owner} | {terrain} | {econ} | {prod} | {con} | {res} | {structures} |")
+        print(f"| {server} | {coords} | {name} | {owner} | {terrain} | {econ} | {prod} | {con} | {res} | {structures} |")
 
 
 def _json(s):
