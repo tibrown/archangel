@@ -35,9 +35,13 @@ upload() {
     --data-urlencode "data=$1"
 }
 
-# wipe all tables for a clean, idempotent run
-mysql -h "$ARCHANGEL_DB_HOST" -P "$ARCHANGEL_DB_PORT" -u "$ARCHANGEL_DB_USER" -p"$ARCHANGEL_DB_PASSWORD" "$ARCHANGEL_DB_NAME" -e \
-  "SET FOREIGN_KEY_CHECKS=0; TRUNCATE astros; TRUNCATE bases; TRUNCATE capacities; TRUNCATE capture_events; TRUNCATE combat_reports; TRUNCATE error_log; TRUNCATE fleet_details; TRUNCATE fleets; TRUNCATE guild_members; TRUNCATE guilds; TRUNCATE profiles; TRUNCATE storage_packets; TRUNCATE system_astros; TRUNCATE systems; TRUNCATE technologies; SET FOREIGN_KEY_CHECKS=1;"
+# NON-DESTRUCTIVE: never TRUNCATE or DELETE any table — the suite must not wipe
+# real captured data, even for a clean run. Assertions below either (a) scope a
+# COUNT to a unique test key (coords/fleet_id/player_id/...) that can't collide
+# with real rows, or (b) are delta-based (baseline count captured here, then
+# assert the test added exactly the expected number). Baselines:
+CAP_BEFORE=$($DB "SELECT COUNT(*) FROM capture_events")
+ERR_BEFORE=$($DB "SELECT COUNT(*) FROM error_log WHERE base_url='helion'")
 
 note "1. storage round-trip (savestorage -> getstorage)"
 curl -s -X POST "$BASE/dsisscripts/load/savestorage" \
@@ -101,7 +105,7 @@ check "guild_members row count" 1 "$N"
 
 note "10. dataupload: technology"
 upload '[{"request":{"mode":"technology","techs":[{"tech":"Laser","level":"10"},{"tech":"Armour","level":"12"}],"sendingPlayerId":4242}}]' >/dev/null
-N=$($DB "SELECT COUNT(*) FROM technologies WHERE user_id=4242")
+N=$($DB "SELECT COUNT(*) FROM technologies WHERE user_id=4242 AND tech IN ('Laser','Armour')")
 check "technologies row count" 2 "$N"
 
 note "11. dataupload: capacities"
@@ -118,13 +122,13 @@ note "13. angellog"
 curl -s -X POST "$BASE/dsisscripts/load/angellog" \
   --data-urlencode 'data={"servid":1,"userId":4242,"baseUrl":"helion","errorReport":{"ExMessage":"test"}}' >/dev/null
 N=$($DB "SELECT COUNT(*) FROM error_log WHERE base_url='helion'")
-check "error_log row count" 1 "$N"
+check "error_log row count (+1)" $((ERR_BEFORE+1)) "$N"
 
 note "14. capture_events lossless log"
 N=$($DB "SELECT COUNT(DISTINCT mode) FROM capture_events")
 echo "  distinct modes captured: $N"
 N=$($DB "SELECT COUNT(*) FROM capture_events")
-check "capture_events total rows = 12 (11 modes + 1 fleet re-sighting)" "12" "$N"
+check "capture_events total rows (+12 = 11 modes + 1 fleet re-sighting)" $((CAP_BEFORE+12)) "$N"
 
 note "15. parse/script query handlers (empty-but-valid)"
 R=$(curl -s -X POST "$BASE/archangel/parse/script" --data-urlencode 'data={"request":{"mode":"jg_search","sloc":"A00:00:00:00","dloc":"A00:00:00:05","method":"closest"}}')
