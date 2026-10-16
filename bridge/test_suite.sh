@@ -43,6 +43,29 @@ upload() {
 CAP_BEFORE=$($DB "SELECT COUNT(*) FROM capture_events")
 ERR_BEFORE=$($DB "SELECT COUNT(*) FROM error_log WHERE base_url='helion'")
 
+# Remove ONLY the rows this suite inserted, identified by the synthetic test
+# keys (coords A00:00:00:xx, fleet 777, player 99, guild 5, user 4242). Real
+# captured data is never touched. Runs on exit (trap) so cleanup happens even
+# when a test fails.
+cleanup_test_data() {
+  $DB "DELETE FROM bases WHERE coords='A00:00:00:00'"
+  $DB "DELETE FROM astros WHERE coord='A00:00:00:01'"
+  $DB "DELETE FROM systems WHERE system='A00:00:00'"
+  $DB "DELETE FROM system_astros WHERE system='A00:00:00'"
+  $DB "DELETE FROM fleets WHERE fleet_id=777"
+  $DB "DELETE FROM fleet_details WHERE fleet_id=777"
+  $DB "DELETE FROM combat_reports WHERE location='A00:00:00:03'"
+  $DB "DELETE FROM profiles WHERE player_id=99"
+  $DB "DELETE FROM guilds WHERE guild_id=5"
+  $DB "DELETE FROM guild_members WHERE guild_id=5"
+  $DB "DELETE FROM technologies WHERE user_id=4242 AND tech IN ('Laser','Armour')"
+  $DB "DELETE FROM capacities WHERE user_id=4242"
+  $DB "DELETE FROM storage_packets WHERE user_id=4242 AND storage_key IN ('Preferences','PersonalBookmarks')"
+  $DB "DELETE FROM capture_events WHERE user_id=4242"
+  $DB "DELETE FROM error_log WHERE user_id=4242 AND base_url='helion'"
+}
+trap cleanup_test_data EXIT
+
 note "1. storage round-trip (savestorage -> getstorage)"
 curl -s -X POST "$BASE/dsisscripts/load/savestorage" \
   --data-urlencode 'data={"PlayerId":4242,"Packets":[{"servid":1,"userId":4242,"storageType":0,"storageKey":"Preferences","storageData":{"Scouting":{"MaxScouts":12},"ConnectionDelay":6000}}]}' >/dev/null
