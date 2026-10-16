@@ -2,25 +2,28 @@
 // base menu class
 var DsisMenu = function (_globalName) {
   var gn = _globalName;
+  var self = this;
 
   this.log = function(msg) {
     lg.log('Menu:' + gn + ':' + msg);
   }
 
   this.onCreated = function(e) {
+    // contextMenus.create invokes this as a plain callback, so `this` is not
+    // the DsisMenu instance — use the captured `self`.
     if (chrome.runtime.lastError) {
-      this.log(`Error: ${chrome.runtime.lastError}`);
+      self.log(`Error: ${chrome.runtime.lastError}`);
     } else {
-      this.log("Item created successfully");
+      self.log("Item created successfully");
     }
   }
 
   this.OnRemoved = function(e) {
-    this.log('Removed');
+    self.log('Removed');
   }
 
   this.OnError = function(error) {
-    this.log('OnError' + error);
+    self.log('OnError' + error);
   }
 
   this.Create = function(properties) {

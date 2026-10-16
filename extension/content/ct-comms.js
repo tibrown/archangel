@@ -103,4 +103,23 @@ var ctComms = function () {
     }
   }
 
+  // bfcache: Chrome freezes the page on back/forward nav and its JS does not
+  // run, so port.onDisconnect can't fire in time. pagehide fires BEFORE the
+  // freeze — disconnect there so the background drops the port cleanly and we
+  // never postMessage into a frozen ('moved into back/forward cache') channel.
+  // pageshow re-establishes the port when the page is restored.
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', function () {
+      if (comms.port) {
+        try { comms.port.disconnect(); } catch (e) {}
+        comms.port = null;
+      }
+    });
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted && !comms.port) {
+        comms.ConnectToBG(function () {});
+      }
+    });
+  }
+
 }
