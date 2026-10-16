@@ -351,8 +351,8 @@ chrome.runtime.onMessage.addListener(function(msg) {
               var a = $('a[href*="loc="]');
               if (a.length > 1) {
                 a = $('a:contains("System")');
-                loc = a.attr("href").match(/([A-Z]\d\d:\d\d:\d\d)/)[1];
-              } else loc = a.text().match(/([A-Z]\d\d:\d\d:\d\d)/)[1];
+                loc = safeMatch(a.attr("href"), /([A-Z]\d\d:\d\d:\d\d)/, [1]);
+              } else loc = safeMatch(a.text(), /([A-Z]\d\d:\d\d:\d\d)/, [1]);
 
               ctF.DisplayStatus("Parsing System for Fleet Detail:" + loc);
               aScout.System(loc, ctF.FlushUpload);
@@ -422,7 +422,7 @@ var ct = {
         // calculater cost per unit - basic
         switch (this.Key) {
           case "urban-structures":
-            this.Fert = this.Comment.match(/\((\d)\)/)[1];
+            this.Fert = safeMatch(this.Comment, /\((\d)\)/, [1]);
             this.Fert = parseInt(this.Fert);
             this.CostPerUnit = this.Cost / this.Fert;
             this.Gain = this.Fert;
@@ -590,7 +590,7 @@ var ct = {
             var c = $(col);
             switch (cindex) {
               case 0:
-                key = c.html().match(/item item_(.*)\"/)[1];
+                key = safeMatch(c.html(), /item item_(.*)\"/, [1]);
                 break;
               case 1:
                 name = $("a", c).text();
@@ -817,7 +817,7 @@ var ct = {
           subPage = "";
           var fleetId = null;
           if (search.match(/fleet=/)) {
-            message.actionArgs.fleetId = search.match(/fleet=(\d+)/)[1];
+            message.actionArgs.fleetId = safeMatch(search, /fleet=(\d+)/, [1]);
             subPage = "overview";
           }
           if (search.match(/view=move/) != null) {

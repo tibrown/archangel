@@ -53,7 +53,7 @@ var Gather = function() {
         if (gTh.sindex == 2 && fleetA.length == 0) {
           return;
         }
-        var fleetId = $(fleetA).attr('href').match(/\d+/)[0];
+        var fleetId = safeMatch($(fleetA).attr('href'), /\d+/, [0]);
         // var gTh.sindex = 1;
         var destCell = $('td:eq(' + gTh.sindex + ')', this);
         var dest = destCell.text();
@@ -76,7 +76,7 @@ var Gather = function() {
         if (dest.match(/\*$/)) return; // skip fleets in flight
         var destA = $('td:eq(' + gTh.sindex + ') a', this);
         var destCell = $('td:eq(' + gTh.sindex + ')', this);
-        var loc = $(destA).attr('href').match(/[A-Z]\d\d\:\d\d\:\d\d\:\d\d/)[0];
+        var loc = safeMatch($(destA).attr('href'), /[A-Z]\d\d\:\d\d\:\d\d\:\d\d/, [0]);
         var htxt = $(destA).text();
         if (!htxt.match(/[A-Z]\d\d\:\d\d\:\d\d\:\d\d/)) {
           htxt = htxt + '(' + loc + ')';
@@ -166,10 +166,10 @@ var Gather = function() {
       $(cell).unbind('click');
       var f = $(cell).parent();
       var ftd = $('td:eq(0)', f);
-      var loc = $('td:eq(' + sindex + ')', f).html().match(/[A-Z]\d\d\:\d\d\:\d\d\:\d\d/)[0];
+      var loc = safeMatch($('td:eq(' + sindex + ')', f).html(), /[A-Z]\d\d\:\d\d\:\d\d\:\d\d/, [0]);
 
       var fa = $('a', ftd).attr('href');
-      var fleetId = fa.match(/\d+/)[0];
+      var fleetId = safeMatch(fa, /\d+/, [0]);
       var id = 'inpF_SH' + index + '_FL' + fleetId;
       var avhangers = (ships.ShipTypes[index].hangers > 0) ? parseInt(txt) * ships.ShipTypes[index].hangers : 0;
 
@@ -297,7 +297,7 @@ var Gather = function() {
       var curlocA = $('td:eq(' + gTh.sindex + ') a:eq(0)', row);
       var startC = $(curlocA);
       var startA = startC.attr('href');
-      var start = startA.match(/[A-Z]\d\d\:\d\d\:\d\d\:\d\d/)[0];
+      var start = safeMatch(startA, /[A-Z]\d\d\:\d\d\:\d\d\:\d\d/, [0]);
 
       var cid = 'fJGC' + fleetId;
       var fid = 'fJGF' + fleetId;
@@ -363,8 +363,8 @@ var Gather = function() {
           if ($(this).attr('type') == 'hidden') return;
 
           var id = $(this).attr('id');
-          var shIndex = id.match(/SH(\d+)/)[1];
-          var fleetId = id.match(/FL(\d+)/)[1];
+          var shIndex = safeMatch(id, /SH(\d+)/, [1]);
+          var fleetId = safeMatch(id, /FL(\d+)/, [1]);
 
           var ship = ships.ShipTypes[shIndex];
           if (typeof ship == 'undefined') return;
@@ -451,7 +451,7 @@ var Gather = function() {
         }
         var lhtml = row.html();
         //gTh.log('row:' + i + ', maxrows=' + rows.length);
-        var loc = lhtml.match(/[A-Z]\d\d\:\d\d\:\d\d\:\d\d/)[0];
+        var loc = safeMatch(lhtml, /[A-Z]\d\d\:\d\d\:\d\d\:\d\d/, [0]);
 
         var hasGate = true;
 
@@ -479,9 +479,9 @@ var Gather = function() {
           gTh.log('id:' + inp.id + ', val:' + num);
 
           var fid = $(inp).attr('id');
-          var shIndex = fid.match(/SH(\d+)/)[1];
+          var shIndex = safeMatch(fid, /SH(\d+)/, [1]);
 
-          var fleetId = fid.match(/FL(\d+)/)[1];
+          var fleetId = safeMatch(fid, /FL(\d+)/, [1]);
           sh.ship = ships.ShipTypes[shIndex];
 
           var ndcell = $('#LDEST' + fleetId);
@@ -683,7 +683,7 @@ var Gather = function() {
       var cell = $('#' + id).parent();
       var txt = $('#' + id).val();
       cell.append('<small>' + txt + '</small>');
-      var index = $('#' + id).attr('id').match(/SH(\d+)/)[1];
+      var index = safeMatch($('#' + id).attr('id'), /SH(\d+)/, [1]);
       $('#' + id).remove();
       $('#lbl' + id).remove();
       $('#NU' + id).remove();

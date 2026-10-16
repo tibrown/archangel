@@ -109,7 +109,7 @@ var Parser = function() {
       var getCap = function(pval, cmdr) {
 
         if (cmdr) {
-          var v = cmdr.match(/\d+/)[0];
+          var v = safeMatch(cmdr, /\d+/, [0]);
           var clvl = .01 * v;
           var mins = clvl * 60;
           var fact = pval / (60 - mins);
@@ -170,8 +170,8 @@ var Parser = function() {
         rows = $(page).find('.layout.listing.sorttable tr:gt(0)');
       } else {
         var info = $('td:contains(Tag: )').text();
-        var guild_tag = info.match(/Tag: \[(.{1,5})\]/)[1];
-        var guild_id = info.match(/Guild: (\d+)/)[1];
+        var guild_tag = safeMatch(info, /Tag: \[(.{1,5})\]/, [1]);
+        var guild_id = safeMatch(info, /Guild: (\d+)/, [1]);
         var guild_name = $('#guild_show table tr:first th:eq(1)').text();
         rows = $('.layout.listing.sorttable tr:gt(0)');
       }
@@ -227,7 +227,7 @@ var Parser = function() {
         obj = $('body').children();
         var debris = $('center:contains(debris)');
         var last_pillaged = $('center:contains(pillaged)');
-        base_id = location.search.match(/\d+/)[0];
+        base_id = safeMatch(location.search, /\d+/, [0]);
       } else {
         if (parse.BadDoc(msg, 'parseBase')) return;
         var doc = $(msg);
@@ -248,9 +248,9 @@ var Parser = function() {
       }
       var an = headTable.find('a[href*="map"]');
       var coords = an.text();
-      var universeId = coords.match(/[A-Z]/)[0];
+      var universeId = safeMatch(coords, /[A-Z]/, [0]);
       if (last_pillaged.length > 0) {
-        last_pillaged = last_pillaged.text().match(/\d+/)[0];
+        last_pillaged = safeMatch(last_pillaged.text(), /\d+/, [0]);
       } else {
         last_pillaged = 0;
       }
@@ -297,7 +297,7 @@ var Parser = function() {
       var owner_id = 0;
       // FIXME TDB 09-08-2018
       try {
-        owner_id = oTag.attr('href').match(/\d+/)[0];
+        owner_id = safeMatch(oTag.attr('href'), /\d+/, [0]);
       } catch (e) {
         lg.debug(e, 'Error in ParseBase finding Owner', {
           details: {
@@ -306,7 +306,7 @@ var Parser = function() {
         });
       }
       var ownerLevel = 0.0;
-      if (owner_name != 'United Colonies' && owner_name != 'Drekons') ownerLevel = oTag.attr('title').match(/\d+\.\d+/)[0];
+      if (owner_name != 'United Colonies' && owner_name != 'Drekons') ownerLevel = safeMatch(oTag.attr('title'), /\d+\.\d+/, [0]);
 
       var row1name = $('tr:contains(Occupier) td:eq(1)', capacityTable).text();
 
@@ -327,7 +327,7 @@ var Parser = function() {
         occupier_id = 0;
         // FIXME TDB
         try {
-          occupier_id = oTag.attr('href').match(/\d+$/)[0]; // ERROR!,
+          occupier_id = safeMatch(oTag.attr('href'), /\d+$/, [0]); // ERROR!,
           ss = oTag.attr('title');
           // number
           // format?
@@ -336,7 +336,7 @@ var Parser = function() {
           ss = occupier_name.match(/\[.+\]/);
           s = (ss == null) ? '' : ss[0];
           occGuildTag = s.replace('[', '').replace(']', '');
-          occupier_name = (ss == null) ? occupier_name : occupier_name.match(/ .+/)[0];
+          occupier_name = (ss == null) ? occupier_name : safeMatch(occupier_name, / .+/, [0]);
           occupier_name = jQuery.trim(occupier_name);
         } catch (e) {
           lg.debug(e, 'error', {
@@ -462,13 +462,13 @@ var Parser = function() {
         if (parse.BadDoc(msg, 'parseAstro')) return;
         var obj = $(msg);
         ctF.UpdatePage(obj);
-        var coords = obj.filter('center:contains(Galaxy)').html().match(/[A-Z]\d\d:\d\d:\d\d:\d\d/)[0];
+        var coords = safeMatch(obj.filter('center:contains(Galaxy)').html(), /[A-Z]\d\d:\d\d:\d\d:\d\d/, [0]);
         var base_row = obj.filter('table:contains(Occupier) tr:last');
         var ownerPresent = obj.filter('table:contains(Owner) tr:last');
         terrain = obj.filter('table:contains(Astro Type:)');
         if (terrain.length > 0) {
           terrain = terrain.find('center img');
-          terrain = terrain.attr('src').match(/astros\/(.+)\.jpg/)[1];
+          terrain = safeMatch(terrain.attr('src'), /astros\/(.+)\.jpg/, [1]);
         } else
           terrain = '  unknown';
 
@@ -477,7 +477,7 @@ var Parser = function() {
         // passive scan
         ctF.DisplayStatus('Parsing Astro');
         ctF.UpdatePage();
-        var coords = $('center').html().match(/[A-Z]\d\d:\d\d:\d\d:\d\d/)[0];
+        var coords = safeMatch($('center').html(), /[A-Z]\d\d:\d\d:\d\d:\d\d/, [0]);
         var base_row = $('table:contains(Occupier) tr:last');
         var ownerPresent = $('table:contains(Owner) tr:last');
         var whPresent = $('table:contains(W' + 'orm' + 'hol' + 'e)');
@@ -527,17 +527,17 @@ var Parser = function() {
           items = base_row.children();
           var occ_a = items.eq(2).children('a:first');
           if (occ_a.length == 1) {
-            occ_id = occ_a.attr('href').match(/profile\.aspx\?player=(\d+)/)[1];
+            occ_id = safeMatch(occ_a.attr('href'), /profile\.aspx\?player=(\d+)/, [1]);
             fnm = occ_a.text();
             var t = fnm.match(/\[(.+)\]/);
             if (t && t.length > 0) occGuildTag = t[1];
             t = fnm.match(/\] (.+)/);
             if (t.length > 0) occName = t[1];
-            occLevel = occ_a.attr('title').match(/\d+\.\d+/)[0];
+            occLevel = safeMatch(occ_a.attr('title'), /\d+\.\d+/, [0]);
           }
 
-          var baseId = parseInt(items.eq(0).children('a:first').attr('href').match(/base\.aspx\?base=(\d+)/)[1]);
-          var ownerId = parseInt(items.eq(1).children('a:first').attr('href').match(/profile\.aspx\?player=(\d+)/)[1]);
+          var baseId = parseInt(safeMatch(items.eq(0).children('a:first').attr('href'), /base\.aspx\?base=(\d+)/, [1]));
+          var ownerId = parseInt(safeMatch(items.eq(1).children('a:first').attr('href'), /profile\.aspx\?player=(\d+)/, [1]));
           var guildTag = '';
           var ownerLevel = 0.0;
           var ownerName = '';
@@ -554,7 +554,7 @@ var Parser = function() {
           var title = items.eq(1).children('a:first').attr('title');
 
           var ownerLevel = 0.0;
-          if (ownerName != 'United Colonies' && ownerName != 'Drekons') ownerLevel = title.match(/\d+\.\d+/)[0];
+          if (ownerName != 'United Colonies' && ownerName != 'Drekons') ownerLevel = safeMatch(title, /\d+\.\d+/, [0]);
 
           req = {
             request: {
@@ -806,13 +806,13 @@ var Parser = function() {
               if (d.attr('id') == plid) {
                 // found base owner
                 var hrf = d.attr('href');
-                playerId = hrf.match(/\d+/)[0];
+                playerId = safeMatch(hrf, /\d+/, [0]);
                 playerNick = d.text();
               }
               if (d.attr('id') == ocid) {
                 // found occ player
                 var hrf = d.attr('href');
-                occPlayerId = hrf.match(/\d+/)[0];
+                occPlayerId = safeMatch(hrf, /\d+/, [0]);
                 occNick = d.text();
               }
             }
@@ -961,7 +961,7 @@ var Parser = function() {
       for (var i = 0; i < links.length; i++) {
         var l = links.eq(i);
         if (l.css('display') == 'none') continue;
-        var tmp = l.attr('href').match(/[A-Z]\d\d:\d\d:\d\d/)[0];
+        var tmp = safeMatch(l.attr('href'), /[A-Z]\d\d:\d\d:\d\d/, [0]);
         for (var j = 0; j < systems.length; j++) {
           if (systems[j].coords == tmp) {
             tmp = false;
@@ -1024,11 +1024,11 @@ var Parser = function() {
       var tables = info.find('table');
       var locA = info.find('tr:eq(1) td:eq(1) a').attr('href');
 
-      var coords = locA.match(/[A-Z]\d{2}(:\d\d){3}/)[0];
+      var coords = safeMatch(locA, /[A-Z]\d{2}(:\d\d){3}/, [0]);
 
       var time = info.find('tr:eq(2) td:eq(1)').text();
 
-      var att_id = info.find('tr:eq(5) td:eq(1) a').attr('href').match(/\d+/)[0];
+      var att_id = safeMatch(info.find('tr:eq(5) td:eq(1) a').attr('href'), /\d+/, [0]);
 
       var att_lvl = info.find('tr:eq(5) td:eq(1) small').text();
       var m = att_lvl.match(/lvl (\d+\.\d+)/);
@@ -1039,17 +1039,17 @@ var Parser = function() {
         row_mod++;
       }
       if (info.find('tr:eq(' + (13 + row_mod) + ') td:eq(0)').text() == 'Commander') {
-        commander = info.find('tr:eq(' + (13 + row_mod) + ') td:eq(1)').text().match(/\(.+\)/)[0].replace('(', '').replace(')', '');
+        commander = safeMatch(info.find('tr:eq(' + (13 + row_mod) + ') td:eq(1)').text(), /\(.+\)/, [0]).replace('(', '').replace(')', '');
         row_mod++;
       }
       // FIXME look for drekons, no lvl
       var def_lvl = info.find('tr:eq(8) td:eq(1) small').text();
       var m = def_lvl.match(/lvl (\d+\.\d+)/);
       if (m) def_lvl = m[1];
-      var def_id = info.find('tr:eq(8) td:eq(1) a').attr('href').match(/\d+/)[0];
+      var def_id = safeMatch(info.find('tr:eq(8) td:eq(1) a').attr('href'), /\d+/, [0]);
 
-      if (info.find('tr:eq(11) td:eq(0)').text() == 'Start Defenses') def_start_def = info.find('tr:eq(11) td:eq(1)').text().match(/\d+/)[0];
-      if (info.find('tr:eq(12) td:eq(0)').text() == 'End Defenses') def_end_def = info.find('tr:eq(12) td:eq(1)').text().match(/\d+/)[0];
+      if (info.find('tr:eq(11) td:eq(0)').text() == 'Start Defenses') def_start_def = safeMatch(info.find('tr:eq(11) td:eq(1)').text(), /\d+/, [0]);
+      if (info.find('tr:eq(12) td:eq(0)').text() == 'End Defenses') def_end_def = safeMatch(info.find('tr:eq(12) td:eq(1)').text(), /\d+/, [0]);
 
       var attackerUnits = attacker.find('tr:gt(1)');
       if (attackerUnits.length == 0) var att_units = '';
@@ -1190,14 +1190,14 @@ var Parser = function() {
       if (table.find('table').length > 0) rows = $('table tr:gt(0)', table);
       else rows = $('tr:gt(1)', table);
 
-      var universeId = coord.match(/[A-Z]/)[0];
+      var universeId = safeMatch(coord, /[A-Z]/, [0]);
       var fleetIDArray = [];
       var fleets = [];
       var myTag = Player.tag;
       for (var i = 0; i < rows.length; i++) {
         var items = rows.eq(i).children();
         try {
-          var fleetID = $('a:first', items.eq(0)).attr('href').match(/\d+/)[0];
+          var fleetID = safeMatch($('a:first', items.eq(0)).attr('href'), /\d+/, [0]);
         } catch(te) {
           lg.debug(e, 'Error in ParseFleet(getting fleetId,line:1166)', {
             stack: true
@@ -1207,7 +1207,7 @@ var Parser = function() {
         }
         var fleetname = $('a:first', items.eq(0)).text();
         var plk = $('a:first', items.eq(1));
-        var playerId = plk.attr('href').match(/\d+/)[0];
+        var playerId = safeMatch(plk.attr('href'), /\d+/, [0]);
         var txt = plk.text();
         var tag = (txt=='')?'':txt.match(/\[(\w+)\]/);
         if(tag && tag.length > 0) tag = tag[1];
@@ -1270,7 +1270,7 @@ var Parser = function() {
       for (var i = 0; i < rows.length; i++) {
         var items = rows.eq(i).children();
         var plk = $('a:first', items.eq(1));
-        var playerId = plk.attr('href').match(/\d+/)[0];
+        var playerId = safeMatch(plk.attr('href'), /\d+/, [0]);
         var hf = plk.text();
         var tag = hf.match(/\[(\w+)\]/);
         if(tag && tag.length>0) tag = tag[1];
@@ -1422,19 +1422,19 @@ var Parser = function() {
         fl.fleetname = al0.text();
         var al = tr.find('td:eq(1) a');
         var href = al.attr('href');
-        var loc = href.match(/([A-Z]\d\d:\d\d).+/)[1];
+        var loc = safeMatch(href, /([A-Z]\d\d:\d\d).+/, [1]);
         data.regions.push(loc);
         var m = href.match(/([A-Z]\d\d:\d\d:\d\d:\d\d)/);
         if (m) fl.location = m[1];
         // get fleetId
         al = tr.find('td:eq(0) a');
-        var fleetId = al.attr('href').match(/fleet=(\d+)/)[1];
+        var fleetId = safeMatch(al.attr('href'), /fleet=(\d+)/, [1]);
         fl.fleetId = fleetId;
         // parse destination
         td2 = tr.find('td:eq(2)');
         al = tr.find('td:eq(2) a');
         fl.destination = '';
-        if (al.length == 1) fl.destination = al.attr('href').match(/([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+        if (al.length == 1) fl.destination = safeMatch(al.attr('href'), /([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
         td2 = tr.find('td:eq(3)');
         fl.arrival = td2.text();
         td2 = tr.find('td:eq(4)');
@@ -1460,7 +1460,7 @@ var Parser = function() {
         var td2 = tr.find('td:eq(1)');
         if (td2.length == 0) return;
         var al = tr.find('td:eq(1) a');
-        var loc = al.attr('href').match(/([A-Z]\d\d:\d\d).+/)[1];
+        var loc = safeMatch(al.attr('href'), /([A-Z]\d\d:\d\d).+/, [1]);
         regions.push(loc);
       });
       econs.CallBack(callback, regions);
@@ -1484,7 +1484,7 @@ var Parser = function() {
           mode: 'invalidPlayer',
           sendingPlayerId: ctG.SendingPlayerId,
           universeId: 'z',
-          playerId: search.match(/\d+/)[0]
+          playerId: safeMatch(search, /\d+/, [0])
         };
         var req = {
           request: data
@@ -1494,11 +1494,11 @@ var Parser = function() {
       }
       var inactive = $('b:contains(Player Inactive)');
       var daysInactive = null;
-      if (inactive.length) daysInactive = inactive.text().match(/\d+/)[0];
+      if (inactive.length) daysInactive = safeMatch(inactive.text(), /\d+/, [0]);
 
       var vac = $('b:contains(In Vacation Mode)');
       var daysinvac = null;
-      if (vac.length) daysinvac = vac.text().match(/\d+/)[0];
+      if (vac.length) daysinvac = safeMatch(vac.text(), /\d+/, [0]);
       var data = {
         mode: 'profile',
         sendingPlayerId: ctG.SendingPlayerId,
@@ -1582,7 +1582,7 @@ var Parser = function() {
   }
 
   this.FakeEyesAstroBase = function(location, isFoggy) {
-    html = '<table class="base" align="center" width="1000"><tbody>' + '<tr><td width="33%"><center><br>' + '<b>Astro Type:</b> astroType<br><br>' + '<b>Terrain:</b> terrain<br><br>' + '<b>Area:</b> area<br><br>' + '<b>Solar Energy:</b> solar<br><br>' + '<b>Fertility:</b> fertility<br><br>' + '<table id="base_resources" class="no_back" align="center"><tbody>' + '<tr><th>Resources</th></tr><tr><td class="content" style="padding: 0px">' + '<table class="layout listing3"><tbody>' + '<tr><td>Metal</td><td align="right">metal</td></tr>' + '<tr><td>Gas</td><td align="right">gas</td></tr>' + '<tr><td>Crystals</td><td align="right">xtal</td></tr></tbody>' + '</table></td></tr></tbody></table><br></center></td>' + '<th class="dropcap" width="34%">Coming Soon<br><br>' + '<img src="http://cdn.astroempires.com/skins/AE_Original/images/astros/Rocky.jpg" alt=""><br><br></th>' + '<td width="33%"><br>' + '<table id="base_processing-capacities" class="no_back" align="center"><tbody>' + '<tr><th>Base information</th></tr><tr><td class="content" style="padding: 0px">' + '<table class="layout listing3" align="center"><tbody>' + '<tr align="center"><td>Base Owner</td>' + '<td colspan="2"><a href="profile.aspx?player=-1" title="Player level level">[tag]  nick</a></td></tr>' + '<tr align="center"><td>Occupier</td><td colspan="2"></td></tr>' + '<tr><th colspan="3">&nbsp;</th></tr><tr align="center">' + '<td>Economy</td><td align="right">economy</td><td>cred./h</td></tr>' + '<tr align="center"><td>Owner Income</td><td align="right">income</td>' + '<td>cred./h</td></tr><tr><th colspan="3">&nbsp;</th></tr>' + '<tr align="center"><td>Construction</td><td align="right">construction</td><td>cred./h</td></tr>' + '<tr align="center"><td>Production</td><td align="right">production</td><td>cred./h</td></tr>' + '<tr align="center"><td>Research</td><td align="right">research</td><td>cred./h</td></tr>' + '</tbody></table></td></tr></tbody></table><br></td></tr>' + '<tr><td colspan="3" align="center">Base Commander: commander ' + '<small>(level)</small></td></tr></tbody></table>';
+    html = '<table class="base" align="center" width="1000"><tbody>' + '<tr><td width="33%"><center><br>' + '<b>Astro Type:</b> astroType<br><br>' + '<b>Terrain:</b> terrain<br><br>' + '<b>Area:</b> area<br><br>' + '<b>Solar Energy:</b> solar<br><br>' + '<b>Fertility:</b> fertility<br><br>' + '<table id="base_resources" class="no_back" align="center"><tbody>' + '<tr><th>Resources</th></tr><tr><td class="content" style="padding: 0px">' + '<table class="layout listing3"><tbody>' + '<tr><td>Metal</td><td align="right">metal</td></tr>' + '<tr><td>Gas</td><td align="right">gas</td></tr>' + '<tr><td>Crystals</td><td align="right">xtal</td></tr></tbody>' + '</table></td></tr></tbody></table><br></center></td>' + '<th class="dropcap" width="34%">Coming Soon<br><br>' + '<img src="https://cdn.astroempires.com/skins/AE_Original/images/astros/Rocky.jpg" alt=""><br><br></th>' + '<td width="33%"><br>' + '<table id="base_processing-capacities" class="no_back" align="center"><tbody>' + '<tr><th>Base information</th></tr><tr><td class="content" style="padding: 0px">' + '<table class="layout listing3" align="center"><tbody>' + '<tr align="center"><td>Base Owner</td>' + '<td colspan="2"><a href="profile.aspx?player=-1" title="Player level level">[tag]  nick</a></td></tr>' + '<tr align="center"><td>Occupier</td><td colspan="2"></td></tr>' + '<tr><th colspan="3">&nbsp;</th></tr><tr align="center">' + '<td>Economy</td><td align="right">economy</td><td>cred./h</td></tr>' + '<tr align="center"><td>Owner Income</td><td align="right">income</td>' + '<td>cred./h</td></tr><tr><th colspan="3">&nbsp;</th></tr>' + '<tr align="center"><td>Construction</td><td align="right">construction</td><td>cred./h</td></tr>' + '<tr align="center"><td>Production</td><td align="right">production</td><td>cred./h</td></tr>' + '<tr align="center"><td>Research</td><td align="right">research</td><td>cred./h</td></tr>' + '</tbody></table></td></tr></tbody></table><br></td></tr>' + '<tr><td colspan="3" align="center">Base Commander: commander ' + '<small>(level)</small></td></tr></tbody></table>';
     var tbl = $('table.astro');
     if (tbl.length == 0) {
       tbl = $('table.base');

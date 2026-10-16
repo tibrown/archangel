@@ -231,18 +231,18 @@ var AutoScouter = function() {
           var loc = '';
           if (destTxt == '') {
             locTxt = $(this).children('td:eq(1)').text();
-            loc = locTxt.match(/([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+            loc = safeMatch(locTxt, /([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
           } else {
-            tdest = destTxt.match(/([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+            tdest = safeMatch(destTxt, /([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
             loc = tdest;
           }
 
 
           var scoutsize = Number($(this).children('td:eq(4)').text());
-          var galaxy = loc.match(/([A-Z]\d\d):\d\d:\d\d:\d\d/)[1];
+          var galaxy = safeMatch(loc, /([A-Z]\d\d):\d\d:\d\d:\d\d/, [1]);
           var tds = $(this).children('td');
           var td1 = tds.eq(0).find('a');
-          var fleetId = td1.attr('href').match(/\d+/)[0];
+          var fleetId = safeMatch(td1.attr('href'), /\d+/, [0]);
           for (var s = 0; s < aScout.ActiveScout.ScoutFleets.length; s++) {
             if (aScout.ActiveScout.ScoutFleets[s].fleetId == fleetId) {
               for (var j = 0; j < aScout.ships.length; j++) {
@@ -421,7 +421,7 @@ var AutoScouter = function() {
           aScout.SingleScouts = [];
           $.each(dfleets, function(index, sourceFleet) {
             $.each(sourceFleet.details, function(index, ship) {
-              var g = sourceFleet.location.match(/([A-Z]\d\d)/)[1];
+              var g = safeMatch(sourceFleet.location, /([A-Z]\d\d)/, [1]);
               if (ship.unit == 'Scout Ship' && parseInt(ship.amt) > parseInt(mamt) && g == galaxy) {
                 mamt = ship.amt;
                 mostSc = sourceFleet;
@@ -535,8 +535,8 @@ var AutoScouter = function() {
               var f = aScout.detailFleets[i];
               // skip if flying
               if (f.destination != '') continue;
-              var fgal = f.location.match(/([A-Z]\d\d)/)[1];
-              var freg = f.location.match(/([A-Z]\d\d:\d\d)/)[1];
+              var fgal = safeMatch(f.location, /([A-Z]\d\d)/, [1]);
+              var freg = safeMatch(f.location, /([A-Z]\d\d:\d\d)/, [1]);
               // make sure it is in this galaxy
               if (fgal != galaxy) continue;
               var reg = sru.GetRegionObj(freg);
@@ -976,15 +976,15 @@ var AutoScouter = function() {
           if (!(arrival > 0)) arrival = 0;
           var td1a = td1.attr('href');
           var td2a = td2.attr('href');
-          var fGal = td2a.match(/loc=([A-Z]\d\d):\d\d:\d\d:\d\d/)[1];
+          var fGal = safeMatch(td2a, /loc=([A-Z]\d\d):\d\d:\d\d:\d\d/, [1]);
           if (fGal != galaxy) return;
           var td3a = (td3 != null) ? td3.attr('href') : null;
-          var destLoc = (td3a == null) ? '' : td3a.match(/loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+          var destLoc = (td3a == null) ? '' : safeMatch(td3a, /loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
           row = {
             fleetUrl: td1a,
-            fleetId: td1a.match(/fleet=(\d+)/)[1],
+            fleetId: safeMatch(td1a, /fleet=(\d+)/, [1]),
             fleetName: td1.text(),
-            startLocation: td2a.match(/loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1],
+            startLocation: safeMatch(td2a, /loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]),
             startName: td2.text(),
             destLocation: destLoc,
             destinationName: td3.text(),
@@ -1031,7 +1031,7 @@ var AutoScouter = function() {
         else
           var loc = dest;
         var scoutsize = Number($(this).children('td:eq(4)').text());
-        var galaxy = loc.match(/\(([A-Z]\d\d):\d\d:\d\d:\d\d\)$/)[1];
+        var galaxy = safeMatch(loc, /\(([A-Z]\d\d):\d\d:\d\d:\d\d\)$/, [1]);
         // need to see if scouts are on scoutlist... not check size
         if ((gs_galaxy.indexOf(galaxy) != -1) && (scoutsize == 40 || scoutsize == 20)) {
           var tds = $(this).children('td');
@@ -1053,8 +1053,8 @@ var AutoScouter = function() {
             size: td5.text()
           });
         } else {
-          var region = $(this).children('td:eq(1)').text().match(/[A-Z]\d\d:\d\d/)[0];
-          var gal = region.match(/[A-Z]\d\d/)[0];
+          var region = safeMatch($(this).children('td:eq(1)').text(), /[A-Z]\d\d:\d\d/, [0]);
+          var gal = safeMatch(region, /[A-Z]\d\d/, [0]);
           if (gs_galaxy.indexOf(gal) != -1) gs_ignore_regions.push(region);
         }
       });
@@ -1077,8 +1077,8 @@ var AutoScouter = function() {
         $('#gs_timer_div').hide();
         for (var i in landed_scouts) {
           var fleet = landed_scouts[i];
-          var astro = fleet.start_name.match(/[A-Z]\d\d:\d\d:\d\d:\d\d/)[0];
-          var region = astro.match(/[A-Z]\d\d:\d\d/)[0];
+          var astro = safeMatch(fleet.start_name, /[A-Z]\d\d:\d\d:\d\d:\d\d/, [0]);
+          var region = safeMatch(astro, /[A-Z]\d\d:\d\d/, [0]);
           regions.push(region);
           ctF.DisplayStatus('Region:' + region + ', astro:' + astro + ',Url' + fleet.start_url);
           this.log('Region:' + region + ', astro:' + astro + ',Url' + fleet.start_url);
@@ -1145,14 +1145,14 @@ var AutoScouter = function() {
   }
 
   this.SortGalaxyAlpha = function(a, b) {
-    var ar = a.match(/([A-Z]\d\d)/)[1];
-    var br = b.match(/([A-Z]\d\d)/)[1];
+    var ar = safeMatch(a, /([A-Z]\d\d)/, [1]);
+    var br = safeMatch(b, /([A-Z]\d\d)/, [1]);
     return ((ar < br) ? -1 : ((ar > br) ? 1 : 0));
   }
 
   this.SortAstrosAlpha = function(a, b) {
-    var ar = a.match(/([A-Z]\d\d:\d\d:\d\d)/)[1];
-    var br = b.match(/([A-Z]\d\d:\d\d:\d\d)/)[1];
+    var ar = safeMatch(a, /([A-Z]\d\d:\d\d:\d\d)/, [1]);
+    var br = safeMatch(b, /([A-Z]\d\d:\d\d:\d\d)/, [1]);
     return ((ar < br) ? -1 : ((ar > br) ? 1 : 0));
   }
 
@@ -1164,7 +1164,7 @@ var AutoScouter = function() {
         // need list of region objs
         var baseRegions = [];
         $.each(baseRegionLocs, function(index, loc) {
-          var r = loc.match(/([A-Z]\d\d:\d\d)/)[1];
+          var r = safeMatch(loc, /([A-Z]\d\d:\d\d)/, [1]);
           baseRegions.push(new Region(r));
         });
         aScout.IterateRegions(baseRegions, function(data) {

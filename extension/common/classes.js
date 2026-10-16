@@ -1,6 +1,18 @@
 // Base classes - when we need the same format many times.
 
 // class for storing tab metadata for tabs, in background
+// Safe regex capture helper. Legacy code did source.match(/re/)[n] and
+// /re/.exec(source)[n], which throws "Cannot read properties of null" when
+// the source is null/undefined (missing DOM attribute, empty jQuery set) or
+// the pattern doesn't match (DOM drift). Returns '' instead of crashing.
+// Defined in common/classes.js because it is loaded in every context:
+// content scripts, the background service worker, popups, sidebar and options.
+var safeMatch = function (source, re, idx) {
+  if (source == null) return '';
+  var m = String(source).match(re);
+  return (m && m[idx] != null) ? m[idx] : '';
+};
+
 var TabMetadata = function(_tabId, _windowId) {
   this.TabId = _tabId;
   this.WindowId = _windowId;

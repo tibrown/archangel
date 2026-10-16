@@ -283,7 +283,7 @@ var DPanel = function() {
 
   this.AddFleetSummary = function(h, serverName) {
     if(typeof h == 'undefined' || h == '') return;
-    h = h.replace('guild.aspx', 'http://' + serverName + '.astroempires.com/guild.aspx');
+    h = h.replace('guild.aspx', 'https://' + serverName + '.astroempires.com/guild.aspx');
     h = '<small>' + h + '</small>';
     $('#divFleetSummary').html(h).show();
   }

@@ -199,7 +199,7 @@ var PageUI = function () {
         var td1 = $("td:eq(0)", row);
         var alink = td1.find("a");
         var href = alink.attr("href");
-        var fleetId = href.match(/fleet=(\d+)/)[1];
+        var fleetId = safeMatch(href, /fleet=(\d+)/, [1]);
         var h =
           '&nbsp;<a href="' +
           url +
@@ -215,13 +215,13 @@ var PageUI = function () {
         var td2 = $("td:eq(1)", row);
         alink = td2.find("a");
         href = alink.attr("href");
-        var loc = href.match(/loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+        var loc = safeMatch(href, /loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
         locs.push(loc);
         var td3 = $("td:eq(2)", row);
         alink = td3.find("a");
         if (alink.length == 1) {
           href = alink.attr("href");
-          var dest = href.match(/loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+          var dest = safeMatch(href, /loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
           locs.push(dest);
         }
       });

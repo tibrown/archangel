@@ -77,8 +77,8 @@ var ScoutRegionUtil = function() {
           nlst.push(lst[i]);
           lastOne = lst[i];
         } else {
-          var ar = lastOne.match(/([A-Z]\d\d:\d\d)/)[1];
-          var br = lst[i].match(/([A-Z]\d\d:\d\d)/)[1];
+          var ar = safeMatch(lastOne, /([A-Z]\d\d:\d\d)/, [1]);
+          var br = safeMatch(lst[i], /([A-Z]\d\d:\d\d)/, [1]);
           if (ar == br) continue;
           nlst.push(lst[i]);
           lastOne = lst[i];
@@ -151,8 +151,8 @@ var ScoutRegionUtil = function() {
   }
 
   this.SortRegionsAlpha = function(a, b) {
-    var ar = a.match(/([A-Z]\d\d:\d\d)/)[1];
-    var br = b.match(/([A-Z]\d\d:\d\d)/)[1];
+    var ar = safeMatch(a, /([A-Z]\d\d:\d\d)/, [1]);
+    var br = safeMatch(b, /([A-Z]\d\d:\d\d)/, [1]);
     return ((ar < br) ? -1 : ((ar > br) ? 1 : 0));
   }
 

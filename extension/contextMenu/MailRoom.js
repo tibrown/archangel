@@ -62,7 +62,7 @@ var MailRoom = function() {
       $('#divGuildMembers').show();
 
       //var baseUrl = 'http://' + this.GmServer.serverName + '.astroempires.com/';
-      var baseUrl = 'http://'  + mr.GmServer.serverName + '.astroempires.com/';
+      var baseUrl = 'https://'  + mr.GmServer.serverName + '.astroempires.com/';
       var h = '', cnt = 0;
       $.each(members, function(index, player) {
         h +=
@@ -112,7 +112,7 @@ $(document).ready(function() {
       chrome.runtime.sendMessage(new Message('sidebar', 'DisplayMessage', {
         displayText: 'Mail Room Active',
         from: 'MailRoom'
-      }));
+      })).catch(function () {});
     });
 
     $('#btnWriteOne').click(function(e) {
@@ -142,7 +142,7 @@ $(document).ready(function() {
       var body = $('#txtGuildMessage').val();
       $('.member:checked').each(function () {
         var a = $(this).parent().parent().find('a');
-        var p = a.attr('href').match(/player=(\d+)/)[1];
+        var p = safeMatch(a.attr('href'), /player=(\d+)/, [1]);
         var m = {
           playerId: p,
           nick: a.text()

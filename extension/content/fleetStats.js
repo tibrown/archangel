@@ -31,12 +31,12 @@ var FleetStats = function() {
                 // fleet info
                 var h = $(col).html();
                 fleet.Fleetname = $(col).text();
-                fleet.FleetId = h.match(/fleet=(\d+)/)[1];
+                fleet.FleetId = safeMatch(h, /fleet=(\d+)/, [1]);
                 break;
               case 1:
                 var h = $(col).html();
                 fleet.LocationName = $(col).text();
-                fleet.Location = h.match(/loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+                fleet.Location = safeMatch(h, /loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
                 break;
               case 2: // FT
                 var amt = $(col).text();
@@ -249,18 +249,18 @@ var FleetStats = function() {
           if (cells.length != 6) return;
           var loctxt = cells.eq(1).text();
           var lurl = cells.eq(1).children('a').attr('href');
-          var loc = lurl.match(/[A-Z]\d\d\:\d\d\:\d\d\:\d\d/)[0];
+          var loc = safeMatch(lurl, /[A-Z]\d\d\:\d\d\:\d\d\:\d\d/, [0]);
           var dest = cells.eq(2).text();
           var sortkey = loc;
           if (dest != '') {
             var durl = cells.eq(2).children('a').attr('href');
-            var dloc = durl.match(/[A-Z]\d\d\:\d\d\:\d\d\:\d\d/)[0];
+            var dloc = safeMatch(durl, /[A-Z]\d\d\:\d\d\:\d\d\:\d\d/, [0]);
             loctxt = loctxt + '(->' + dloc + ')*';
             sortkey = 'ZZ' + loc;
           }
           var size = cells.eq(4).text();
           var fleetname = cells.eq(0).text();
-          var fleetId = cells.eq(0).children('a').attr('href').match(/\d+/)[0];
+          var fleetId = safeMatch(cells.eq(0).children('a').attr('href'), /\d+/, [0]);
           var url = cells.eq(0).children('a').attr('href');
           var fleet = new Fleet();
           fleet.FleetId = fleetId;

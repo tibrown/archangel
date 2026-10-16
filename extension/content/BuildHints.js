@@ -97,7 +97,7 @@ var BuildHints = function() {
         page_state.structures[structure].cost = page_state.structures[structure].cost * 1.5;
         bHints.log('in-progress structure found');
       }
-      var baseid = /[0-9]+/.exec(window.location.href)[0];
+      var baseid = safeMatch(window.location.href, /[0-9]+/, [0]);
 
       for (var x in page_state.structures) {
         var y = page_state.structures[x];

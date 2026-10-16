@@ -47,7 +47,7 @@ function FleetOperations() {
     try {
       var layer = 1;
       var nextRegion = null;
-      var galaxy = scout.location.match(/([A-Z]\d\d)/)[1];
+      var galaxy = safeMatch(scout.location, /([A-Z]\d\d)/, [1]);
       while (layer < 10 && nextRegion == null) {
         var ring = this.GetRing(galaxy, scout.location, aScout.ActiveScout.ScoutRegions, layer);
         nextRegion = this.GetNextUnscanned(ring);
@@ -57,7 +57,7 @@ function FleetOperations() {
         this.log('No more regions to scan, sending this scout:' + scout.fleetId + ', home:' +
           aScout.ActiveScout.SourceFleets[0].location);
         // send it
-        scout.location = scout.location.match(/([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+        scout.location = safeMatch(scout.location, /([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
         nextRegion = sru.GetRegionObj(aScout.ActiveScout.SourceFleets[0].location);
         nextRegion.location = aScout.ActiveScout.SourceFleets[0].location;
         return nextRegion;
@@ -101,7 +101,7 @@ function FleetOperations() {
         this.log('GetClosestDestination:No more regions to scan, sending this scout:' + scout.fleetId + ', home:' +
           aScout.ActiveScout.SourceFleets[0].location);
         // send it
-        scout.location = scout.location.match(/([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+        scout.location = safeMatch(scout.location, /([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
         cr.region = sru.GetRegionObj(aScout.ActiveScout.SourceFleets[0].location);
         cr.region.location = aScout.ActiveScout.SourceFleets[0].location;
       }
@@ -158,8 +158,8 @@ function FleetOperations() {
 
       var maxLayer = 2;
       var nextRegion = null;
-      var galaxy = scout.location.match(/([A-Z]\d\d)/)[1];
-      var sr = parseInt(scout.location.match(/[A-Z]\d\d:(\d\d)/)[1]);
+      var galaxy = safeMatch(scout.location, /([A-Z]\d\d)/, [1]);
+      var sr = parseInt(safeMatch(scout.location, /[A-Z]\d\d:(\d\d)/, [1]));
       //sr = 95;
 
       srStr = '' + sr;
@@ -226,7 +226,7 @@ function FleetOperations() {
         this.log('GetScoutDestination:No more regions to scan, sending this scout:' + scout.fleetId + ', home:' +
           aScout.ActiveScout.SourceFleets[0].location);
         // send it
-        scout.location = scout.location.match(/([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+        scout.location = safeMatch(scout.location, /([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
         nextRegion = sru.GetRegionObj(aScout.ActiveScout.SourceFleets[0].location);
         nextRegion.location = aScout.ActiveScout.SourceFleets[0].location;
       }
@@ -326,15 +326,15 @@ function FleetOperations() {
           var loc = '';
           if (destTxt == '') {
             locTxt = $(this).children('td:eq(1)').text();
-            loc = locTxt.match(/([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+            loc = safeMatch(locTxt, /([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
           } else {
-            tdest = destTxt.match(/([A-Z]\d\d:\d\d:\d\d:\d\d)/)[1];
+            tdest = safeMatch(destTxt, /([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
             loc = tdest;
           }
 
 
           var scoutsize = Number($(this).children('td:eq(4)').text());
-          var galaxy = loc.match(/([A-Z]\d\d):\d\d:\d\d:\d\d/)[1];
+          var galaxy = safeMatch(loc, /([A-Z]\d\d):\d\d:\d\d:\d\d/, [1]);
           if ((gs_galaxy.indexOf(galaxy) != -1) & (scoutsize == 40 || scoutsize == 20)) {
             var tds = $(this).children('td');
             var td1 = tds.eq(0).find('a');
@@ -356,7 +356,7 @@ function FleetOperations() {
             });
             if (tdest == sentDest) {
               // found it
-              var fleetId = td1.attr('href').match(/\d+/)[0];
+              var fleetId = safeMatch(td1.attr('href'), /\d+/, [0]);
               var row = {
                 fleet_url: td1.attr('href'),
                 fleet_name: td1.text(),
@@ -374,8 +374,8 @@ function FleetOperations() {
               econs.CallBack(mcallback, sf);
             }
           } else {
-            var region = $(this).children('td:eq(1)').text().match(/[A-Z]\d\d:\d\d/)[0];
-            var gal = region.match(/[A-Z]\d\d/)[0];
+            var region = safeMatch($(this).children('td:eq(1)').text(), /[A-Z]\d\d:\d\d/, [0]);
+            var gal = safeMatch(region, /[A-Z]\d\d/, [0]);
           }
 
         });

@@ -33,7 +33,7 @@ var SuperScanners = function() {
     try {
       var tbl = $('#tblScanners');
       tbl.find("tr:gt(0)").remove();
-      var baseUrl = 'http://' + this.GmServer.serverName + '.astroempires.com/';
+      var baseUrl = 'https://' + this.GmServer.serverName + '.astroempires.com/';
       var h = '';
       var lastGal = '';
       $.each(fleets, function(index, fleet) {
@@ -99,7 +99,7 @@ $(document).ready(function() {
       chrome.runtime.sendMessage(new Message('sidebar', 'DisplayMessage', {
         displayText: 'Scanners Active',
         from: 'context'
-      }));
+      })).catch(function () {});
     });
     $('#btnRefresh').click(function(e) {
       if (currentTab) {

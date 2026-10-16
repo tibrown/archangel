@@ -41,7 +41,7 @@ var Gates = function() {
     try {
       var dest = $('#destination').val();
       var start = $('#start').text();
-      var fleetId = window.location.search.match(/fleet=(\d+)/)[1];
+      var fleetId = safeMatch(window.location.search, /fleet=(\d+)/, [1]);
 
       dsisReq.MakeRequest({
         request: {

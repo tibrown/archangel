@@ -25,7 +25,7 @@ var Bookmarks = function() {
       chrome.runtime.sendMessage(new Message('sidebar', 'IncomingBookmark', {
         Href: href,
         Text: txt
-      }));
+      })).catch(function () {});
     });
     return;
   }

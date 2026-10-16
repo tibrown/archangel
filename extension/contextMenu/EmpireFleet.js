@@ -49,7 +49,7 @@ var EmpireFunctions = function() {
   }
 
   this.RenderOneFleet = function(fleet) {
-    var baseUrl = 'http://' + this.GmServer.serverName + '.astroempires.com';
+    var baseUrl = 'https://' + this.GmServer.serverName + '.astroempires.com';
     var tbl = $('#FleetStats');
     var tr = '<tr "align="center" class="FleetRow">' +
       '<td slyle=""><small>' +
@@ -88,7 +88,7 @@ var EmpireFunctions = function() {
       var tbl = $('#FleetStats');
       tbl.find("tr:gt(0)").remove();
 
-      var baseUrl = 'http://' + this.GmServer.serverName + '.astroempires.com';
+      var baseUrl = 'https://' + this.GmServer.serverName + '.astroempires.com';
       $.each(fleets, function(index, fleet) {
         emF.RenderOneFleet(fleet);
       });
@@ -130,7 +130,7 @@ $(document).ready(function() {
       chrome.runtime.sendMessage(new Message('sidebar', 'DisplayMessage', {
         displayText: 'Context Active',
         from: 'context'
-      }));
+      })).catch(function () {});
     });
 
     $('#btnGather').unbind('click').click(function(e) {

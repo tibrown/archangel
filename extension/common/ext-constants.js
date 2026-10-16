@@ -31,7 +31,7 @@ var eConstants = function(isContent = false) {
         displayText: msg,
         from: 'background'
       });
-      chrome.runtime.sendMessage(m);
+      chrome.runtime.sendMessage(m).catch(function () {});
    }
 
    this.CallBack = function(callback, obj) {
