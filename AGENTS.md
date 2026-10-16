@@ -64,6 +64,19 @@ cd bridge && ./test_suite.sh
 storage packets, error log, query handlers, getservers). The suite truncates all
 tables at the start, so it's idempotent.
 
+## Reports
+Query captured data without touching the bridge HTTP API — `reports/report.py`
+reuses `bridge/db.py` (auto-reads `bridge/.env`) and prints Markdown:
+```bash
+bridge/.venv/bin/python reports/report.py bases   # every base + structure levels
+```
+- Use the **bridge venv python** (`bridge/.venv/bin/python`) — the system python
+  has no `pymysql`.
+- Each report is a `report_<name>()` function registered in `reports/report.py`'s
+  `REPORTS` dict; it calls `db.query(...)` and prints a Markdown table.
+- A Hermes skill `archangel-reports` documents this for the agent.
+- Don't run reports while `bridge/test_suite.sh` is truncating tables.
+
 ## Wire format (for anyone extending the bridge)
 All POST bodies are `application/x-www-form-urlencoded`:
 - storage/angellog endpoints: single field `data=<urlencoded JSON>` with `PlayerId` injected.
@@ -93,6 +106,25 @@ Every element is ALSO logged verbatim to `capture_events` (lossless fallback).
   JOIN on the base owner — it is NULL until that player's profile is captured.
 - `parse/script` requests carry no server name, so those queries are not
   server-scoped (fine while Helion is the only server).
+
+## Critical invariants (do not break)
+- **`fake_list` is a honeypot — never touch it.** A decoy "capture mode" the AE
+  server uses to catch bots/scripts. Never parsed, stored, or referred to at any
+  layer. Dropped in BOTH `extension/content/parse.js` (never collected) and
+  `bridge/app.py` (hard `continue` before `_fan_out`/`capture_events`).
+- **Never write to the game DOM while a spy script is present.** The server
+  randomly injects spy scripts (markers `js_jquery_debug` and `debug.aspx` in
+  fetched HTML) that copy the DOM and post it back to catch page-modifying
+  extensions. `content/SpyDetect.js` sets a sticky `IsSpyFound()` flag
+  (`window.sessionStorage` for synchronous per-tab reads, mirrored to
+  `chrome.storage.session` to survive reload); every UI-injection entry point is
+  gated on it (`BuildHints`, `pageUI.UpdatePage`, the content `DTimer`,
+  `Gather.DoGather`).
+- **Defensive regex parsing — use `safeMatch()`.** `common/classes.js` defines
+  `safeMatch(source, re, idx)`, returning `''` on a null source or no-match
+  instead of throwing. Use it in place of raw `source.match(re)[n]` /
+  `re.exec(source)[n]` when reading page-scraped strings, so DOM drift can't
+  crash a content script.
 
 ## DSIS-session gate (must be bypassed in the port)
 The extension does NOT simply upload to a URL. It derives its entire runtime

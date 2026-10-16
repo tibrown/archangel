@@ -138,3 +138,16 @@ In the SW console, when you load an AE page, look for a line indicating `EnsureL
 4. **Reproduce with a fresh AE page load**, not a cached one.
 
 Report back with: the exact console error (SW console), the bridge log tail, and the `capture_events` count before/after. That trio localizes any failure to exactly one layer.
+
+---
+
+## 9. Querying captured data (reports)
+
+Once capture is flowing, query the typed tables without the bridge HTTP API:
+
+```bash
+# (timsmini)
+bridge/.venv/bin/python reports/report.py bases   # every base + structure levels
+```
+
+See `AGENTS.md` → "Reports" for the full list and how to add new reports.
