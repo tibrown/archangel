@@ -92,6 +92,9 @@ per-column filtering, global search, sorting, pagination, and CSV export.
   systemctl --user restart archangel-webapp
   journalctl --user -u archangel-webapp -n 50
   ```
+  **Restart rule:** after ANY change to `webapp/app.py` or `bridge/app.py`, restart
+  the service — the live web must always run current code (a browser refresh only
+  refreshes data, not code).
 - **Read-only by construction:** only `SELECT` is issued; table/column names are
   validated against `information_schema` before any SQL interpolation; all user
   values are bound as `%s` params. Reuses `bridge/db.py` (auto-reads
