@@ -280,3 +280,13 @@ input[type="search"], select {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ---------- bases drill-down ---------- */
+#grid tr.base-row { cursor: pointer; }
+#grid tr.base-row.expanded { background: var(--panel-2); }
+#grid tr.base-detail-row td { background: var(--bg); padding: 10px 16px; }
+.base-detail .sub-title { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.base-detail-grid { display: grid; grid-template-columns: minmax(150px, auto) 1fr; gap: 3px 20px; font-size: 13px; max-width: 520px; }
+.base-detail-grid .pp-key { color: var(--muted); text-align: right; }
+.base-detail-grid .pp-val { font-weight: 600; }
+.base-detail-grid .pp-row.pp-highlight .pp-val { color: var(--accent); font-weight: 800; font-size: 14px; }

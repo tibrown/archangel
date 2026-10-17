@@ -39,8 +39,9 @@ const state = {
   guildMembers: {},      // "servid:guild_id" -> member rows (cached)
   expandedMembers: new Set(), // "servid:guild_id:player_id" expanded
   playerProfiles: {},    // "servid:player_id" -> profile rows (cached)
-  expandedSystems: new Set(), // "servid:system" currently expanded (systems table)
-  systemAstros: {},      // "servid:system" -> astro rows (cached)
+  expandedSystems: new Set(), // "servid|system" currently expanded (systems table)
+  systemAstros: {},      // "servid|system" -> astro rows (cached)
+  expandedBases: new Set(), // "servid|coords" currently expanded (bases table)
 };
 
 // Detail tables that are only reachable via drill-down from a parent table,
@@ -184,6 +185,7 @@ function selectTable(name) {
   state.playerProfiles = {};
   state.expandedSystems = new Set();
   state.systemAstros = {};
+  state.expandedBases = new Set();
   $("fleet-expand").classList.toggle("hidden", !isFleetsTable());
   renderTableList();
   renderFilterBar();
@@ -381,6 +383,7 @@ function renderGridBody() {
   const isFleets = isFleetsTable();
   const isGuilds = isGuildsTable();
   const isSystems = isSystemsTable();
+  const isBases = isBasesTable();
   for (const row of rows) {
     const tr = document.createElement("tr");
     for (const name of state.columns) {
@@ -407,6 +410,17 @@ function renderGridBody() {
       if (state.expandedGuilds.has(gKey)) {
         tr.classList.add("expanded");
         insertGuildMembers(gKey, tr); // async; renders when loaded
+      }
+    } else if (isBases) {
+      const bKey = baseKey(row);
+      tr.classList.add("base-row");
+      tr.dataset.bKey = bKey;
+      tr.title = "Click to expand base details";
+      tr.addEventListener("click", () => toggleBase(row, tr));
+      body.appendChild(tr);
+      if (state.expandedBases.has(bKey)) {
+        tr.classList.add("expanded");
+        insertBaseDetails(row, tr);
       }
     } else if (isFleets) {
       tr.classList.add("fleet-row");
@@ -770,6 +784,98 @@ async function toggleSystem(row, tr) {
   state.expandedSystems.add(sKey);
   tr.classList.add("expanded");
   await insertSystemAstros(sKey, tr);
+}
+
+/* ---------------- bases drill-down ---------------- */
+function isBasesTable() {
+  return state.table && state.table.name === "bases";
+}
+
+// Base coords contain colons (C24:22:99:30), so use | as the separator.
+function baseKey(row) {
+  return `${row.servid}|${row.coords}`;
+}
+
+// Renders a labelled two-column detail grid for one base, with a prominent
+// JG (Jump Gate) row. Uses only fields already present on the row.
+function renderBaseDetails(row) {
+  const tr = document.createElement("tr");
+  tr.className = "base-detail-row";
+  const td = document.createElement("td");
+  td.colSpan = state.columns.length;
+  const wrap = document.createElement("div");
+  wrap.className = "base-detail";
+
+  const head = document.createElement("div");
+  head.className = "sub-title";
+  head.textContent = `${row.base_name || "Base"} — ${row.coords}`;
+  wrap.appendChild(head);
+
+  const grid = document.createElement("div");
+  grid.className = "base-detail-grid";
+
+  // JG is the headline field: jumpgate INT, 1 = has a Jump Gate.
+  const jgVal =
+    row.jumpgate === 1 ? "YES" :
+    row.jumpgate === 0 ? "No" :
+    (row.jumpgate == null || row.jumpgate === "") ? "—" : String(row.jumpgate);
+  grid.appendChild(ppRow("JG (Jump Gate)", jgVal, row.jumpgate === 1));
+  grid.appendChild(ppRow("Owner", [row.owner_name, `(${row.owner_id})`].filter(Boolean).join(" ")));
+  grid.appendChild(ppRow("Owner Guild", row.owner_guild_tag));
+  grid.appendChild(ppRow("Owner Level", row.owner_level));
+  grid.appendChild(ppRow("Occupier", [row.occupier_name, `(${row.occupier_id})`].filter(Boolean).join(" ") || "—"));
+  grid.appendChild(ppRow("Occupier Guild", row.occupier_guild_tag || "—"));
+  grid.appendChild(ppRow("Occupier Level", row.occupier_level ?? "—"));
+  grid.appendChild(ppRow("Terrain", row.terrain));
+  grid.appendChild(ppRow("Wormhole", row.wormhole));
+  grid.appendChild(ppRow("Commander", row.commander || "—"));
+  grid.appendChild(ppRow("Stability", row.stability || "—"));
+  grid.appendChild(ppRow("Construction", row.construction));
+  grid.appendChild(ppRow("Production", row.production));
+  grid.appendChild(ppRow("Research", row.research));
+  grid.appendChild(ppRow("Max Econ", row.max_econ));
+  grid.appendChild(ppRow("Current Econ", row.current_econ));
+  grid.appendChild(ppRow("Debris", row.debris));
+
+  wrap.appendChild(grid);
+  td.appendChild(wrap);
+  tr.appendChild(td);
+  return tr;
+}
+
+// Small label:value pair for the detail grid.
+function ppRow(label, value, highlight) {
+  const row = document.createElement("div");
+  row.className = "pp-row" + (highlight ? " pp-highlight" : "");
+  const k = document.createElement("div");
+  k.className = "pp-key";
+  k.textContent = label;
+  const v = document.createElement("div");
+  v.className = "pp-val";
+  v.textContent = value === null || value === undefined ? "—" : value;
+  row.appendChild(k);
+  row.appendChild(v);
+  return row;
+}
+
+function insertBaseDetails(row, tr) {
+  const next = tr.nextSibling;
+  if (next && next.classList && next.classList.contains("base-detail-row")) next.remove();
+  tr.after(renderBaseDetails(row));
+}
+
+function toggleBase(row, tr) {
+  const bKey = baseKey(row);
+  if (state.expandedBases.has(bKey)) {
+    state.expandedBases.delete(bKey);
+    tr.classList.remove("expanded");
+    const next = tr.nextSibling;
+    if (next && next.classList && next.classList.contains("base-detail-row")) next.remove();
+    return;
+  }
+  state.expandedBases.add(bKey);
+  tr.classList.add("expanded");
+  insertBaseDetails(row, tr);
 }
 
 function renderPager() {
