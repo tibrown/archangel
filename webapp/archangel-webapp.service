@@ -1,0 +1,18 @@
+[Unit]
+Description=Archangel web reports UI (FastAPI -> MariaDB, read-only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/tim/gitrepos/archangel/webapp
+ExecStart=/home/tim/gitrepos/archangel/webapp/start.sh
+ExecStop=/bin/kill -TERM $MAINPID
+StandardInput=null
+TimeoutStartSec=120
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

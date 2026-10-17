@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archangel Reports</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <h1>Archangel</h1>
+      <span class="sub">reports</span>
+    </div>
+    <div class="sidebar-search">
+      <input id="table-search" type="search" placeholder="Filter tables…">
+    </div>
+    <nav id="table-list"></nav>
+  </aside>
+
+  <main id="main">
+    <header id="toolbar">
+      <div class="tb-row">
+        <h2 id="table-title">Select a table</h2>
+        <div class="tb-actions">
+          <button id="btn-refresh" class="btn" title="Re-query the database for fresh table totals">⟳ Refresh</button>
+          <div class="dropdown" id="cols-dd">
+            <button id="btn-cols" class="btn" disabled>Columns ▾</button>
+            <div id="cols-menu" class="dropdown-menu hidden"></div>
+          </div>
+          <button id="btn-export" class="btn" disabled>Export CSV</button>
+        </div>
+      </div>
+      <div class="tb-row tb-controls">
+        <select id="server-filter" title="Filter by server">
+          <option value="">All servers</option>
+        </select>
+        <input id="global-search" type="search" placeholder="Search all columns…">
+        <button id="btn-add-filter" class="btn">+ Filter</button>
+        <span id="fleet-expand" class="fleet-expand hidden">
+          <button id="btn-expand-all" class="btn">Expand all</button>
+          <button id="btn-collapse-all" class="btn">Collapse all</button>
+        </span>
+        <span id="result-count" class="muted"></span>
+      </div>
+      <div id="filter-bar"></div>
+    </header>
+
+    <div id="grid-wrap">
+      <table id="grid">
+        <thead id="grid-head"></thead>
+        <tbody id="grid-body"></tbody>
+      </table>
+      <div id="empty" class="empty hidden">No rows match.</div>
+    </div>
+
+    <footer id="pager">
+      <button id="pg-prev" class="btn">‹ Prev</button>
+      <span id="pg-info" class="muted"></span>
+      <button id="pg-next" class="btn">Next ›</button>
+    </footer>
+  </main>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span id="modal-title"></span>
+      <button id="modal-close" class="btn">✕</button>
+    </div>
+    <pre id="modal-body"></pre>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
