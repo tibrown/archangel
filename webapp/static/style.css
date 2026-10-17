@@ -215,6 +215,15 @@ input[type="search"], select {
 .player-profile-grid { display: grid; grid-template-columns: minmax(140px, auto) 1fr; gap: 3px 16px; font-size: 13px; max-width: 420px; }
 .player-profile-grid .pp-key { color: var(--muted); text-align: right; }
 .player-profile-grid .pp-val { font-weight: 600; }
+
+/* ---------- systems drill-down ---------- */
+#grid tr.system-row { cursor: pointer; }
+#grid tr.system-row.expanded { background: var(--panel-2); }
+#grid tr.system-detail-row td { background: var(--bg); padding: 10px 16px; }
+.system-astros .sub-title { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.system-astros-grid { border-collapse: collapse; width: 100%; font-size: 13px; }
+.system-astros-grid th { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--border); color: var(--muted); font-weight: 600; }
+.system-astros-grid td { padding: 4px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 #grid td.num { text-align: right; font-variant-numeric: tabular-nums; }
 #grid td.json { color: var(--accent-2); cursor: pointer; font-family: var(--mono); font-size: 12px; }
 #grid td.null { color: var(--muted); font-style: italic; }

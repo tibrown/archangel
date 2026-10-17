@@ -39,7 +39,13 @@ const state = {
   guildMembers: {},      // "servid:guild_id" -> member rows (cached)
   expandedMembers: new Set(), // "servid:guild_id:player_id" expanded
   playerProfiles: {},    // "servid:player_id" -> profile rows (cached)
+  expandedSystems: new Set(), // "servid:system" currently expanded (systems table)
+  systemAstros: {},      // "servid:system" -> astro rows (cached)
 };
+
+// Detail tables that are only reachable via drill-down from a parent table,
+// so they are hidden from the sidebar list.
+const HIDDEN_TABLES = new Set(["fleet_details", "guild_members", "system_astros"]);
 
 function kindOf(col) {
   const t = col.type;
@@ -70,7 +76,7 @@ async function refreshAll() {
     fetch("/api/tables").then((r) => r.json()),
     fetch("/api/servers").then((r) => r.json()),
   ]);
-  state.tables = tables;
+  state.tables = tables.filter((t) => !HIDDEN_TABLES.has(t.name));
   renderTableList();
   renderServerFilter(servers);
   if (state.table) {
@@ -176,6 +182,8 @@ function selectTable(name) {
   state.guildMembers = {};
   state.expandedMembers = new Set();
   state.playerProfiles = {};
+  state.expandedSystems = new Set();
+  state.systemAstros = {};
   $("fleet-expand").classList.toggle("hidden", !isFleetsTable());
   renderTableList();
   renderFilterBar();
@@ -372,12 +380,24 @@ function renderGridBody() {
   $("empty").classList.add("hidden");
   const isFleets = isFleetsTable();
   const isGuilds = isGuildsTable();
+  const isSystems = isSystemsTable();
   for (const row of rows) {
     const tr = document.createElement("tr");
     for (const name of state.columns) {
       tr.appendChild(cellFor(name, row[name]));
     }
-    if (isGuilds) {
+    if (isSystems) {
+      const sKey = systemKey(row);
+      tr.classList.add("system-row");
+      tr.dataset.sKey = sKey;
+      tr.title = "Click to expand astros";
+      tr.addEventListener("click", () => toggleSystem(row, tr));
+      body.appendChild(tr);
+      if (state.expandedSystems.has(sKey)) {
+        tr.classList.add("expanded");
+        insertSystemAstros(sKey, tr); // async; renders when loaded
+      }
+    } else if (isGuilds) {
       const gKey = guildKey(row);
       tr.classList.add("guild-row");
       tr.dataset.gKey = gKey;
@@ -666,6 +686,90 @@ async function toggleMemberProfile(mKey, memberTr) {
   state.expandedMembers.add(mKey);
   memberTr.classList.add("expanded");
   await insertPlayerProfile(mKey, memberTr);
+}
+
+/* ---------------- systems drill-down ---------------- */
+function isSystemsTable() {
+  return state.table && state.table.name === "systems";
+}
+
+// A system is identified by (servid, system).
+function systemKey(row) {
+  // system coords contain colons (C24:22:99), so use | as the separator
+  return `${row.servid}|${row.system}`;
+}
+
+async function fetchSystemAstros(sKey) {
+  if (state.systemAstros[sKey] !== undefined) return state.systemAstros[sKey];
+  const [servid, system] = sKey.split("|");
+  const p = new URLSearchParams();
+  p.set("limit", 500);
+  p.append("filters", JSON.stringify({ field: "system", op: "eq", value: system }));
+  p.set("server", servid);
+  const res = await fetch(`/api/tables/system_astros/rows?` + p);
+  if (!res.ok) return [];
+  const data = await res.json();
+  state.systemAstros[sKey] = data.rows;
+  return data.rows;
+}
+
+function renderSystemAstrosDetail(sKey, astros) {
+  const tr = document.createElement("tr");
+  tr.className = "system-detail-row";
+  const td = document.createElement("td");
+  td.colSpan = state.columns.length;
+  const wrap = document.createElement("div");
+  wrap.className = "system-astros";
+  const info = document.createElement("div");
+  info.className = "sub-title";
+  info.textContent = `${astros.length} astro(s)`;
+  wrap.appendChild(info);
+
+  const table = document.createElement("table");
+  table.className = "system-astros-grid";
+  const thead = document.createElement("thead");
+  thead.innerHTML = "<tr><th>Coord</th><th>Terrain</th><th>Empty</th><th>Base</th><th>Player</th><th>Wormhole</th><th>Occ</th><th>Debris</th></tr>";
+  table.appendChild(thead);
+  const tbody = document.createElement("tbody");
+  for (const a of astros) {
+    const atr = document.createElement("tr");
+    atr.innerHTML =
+      `<td>${esc(a.coord)}</td>` +
+      `<td>${esc(a.terrain)}</td>` +
+      `<td>${a.empty ? "yes" : ""}</td>` +
+      `<td>${esc(a.base_id)}</td>` +
+      `<td>${esc(a.player_id)}</td>` +
+      `<td>${a.wormhole ? "yes" : ""}</td>` +
+      `<td>${esc(a.occ_player_id)}</td>` +
+      `<td>${esc(a.debris)}</td>`;
+    tbody.appendChild(atr);
+  }
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  td.appendChild(wrap);
+  tr.appendChild(td);
+  return tr;
+}
+
+async function insertSystemAstros(sKey, systemTr) {
+  const astros = await fetchSystemAstros(sKey);
+  const next = systemTr.nextSibling;
+  if (next && next.classList && next.classList.contains("system-detail-row")) next.remove();
+  systemTr.after(renderSystemAstrosDetail(sKey, astros));
+}
+
+async function toggleSystem(row, tr) {
+  const sKey = systemKey(row);
+  if (state.expandedSystems.has(sKey)) {
+    state.expandedSystems.delete(sKey);
+    tr.classList.remove("expanded");
+    const next = tr.nextSibling;
+    if (next && next.classList && next.classList.contains("system-detail-row")) next.remove();
+    return;
+  }
+  state.expandedSystems.add(sKey);
+  tr.classList.add("expanded");
+  await insertSystemAstros(sKey, tr);
 }
 
 function renderPager() {
