@@ -453,7 +453,10 @@ var AutoScouter = function() {
       for (var i = 0; i < rows.length; i++) {
         var elements = $('td', rows.eq(i));
         var playerId = elements.eq(0).text();
-        if (playerId) ids.push(playerId);
+        if (playerId) ids.push({
+          playerId: playerId,
+          nick: elements.eq(2).text()
+        });
       }
       aScout.log('ScanGuildProfiles: ' + ids.length + ' members to scan');
       ctF.DisplayStatus('Scanning ' + ids.length + ' member profiles');
@@ -473,13 +476,17 @@ var AutoScouter = function() {
         aScout.profileScanResume = callback;
         return;
       }
-      var pid = profileScanQueue.shift();
-      if (typeof pid == 'undefined') {
+      var entry = profileScanQueue.shift();
+      if (typeof entry == 'undefined') {
         aScout.log('Done with profiles in IterateProfiles');
         ctF.DisplayStatus('Profile Scan Done');
         econs.CallBack(callback, 'done');
         return;
       }
+      // entry is either a bare playerId (ScanAllProfiles) or {playerId, nick}
+      var pid = (typeof entry == 'object') ? entry.playerId : entry;
+      var label = (typeof entry == 'object' && entry.nick) ? entry.nick + ' (' + pid + ')' : pid;
+      ctF.DisplayStatus('Scanning: ' + label);
       aScout.Profile(pid, function() {
         if (profileScanQueue.length > 0) aScout.IterateProfiles(callback);
         else {
