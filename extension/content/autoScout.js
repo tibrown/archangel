@@ -353,6 +353,11 @@ var AutoScouter = function() {
   }
 
   this.ScanSystems = function(systemList, callback) {
+    // reset the accumulator and the IterateSystems latch so a fresh list
+    // replaces any previous scan instead of appending to it (which caused
+    // the scan to loop forever on repeat runs)
+    aScout.GuildSystems = [];
+    cnt = 0;
     $.each(systemList, function(index, loc) {
       aScout.GuildSystems.push({
         coords: loc
@@ -377,6 +382,7 @@ var AutoScouter = function() {
       }
       systems = [];
       aScout.GuildSystems = [];
+      cnt = 0;
       dsisReq.MakeRequest(req, gmServer.DsisServers[0], function(resp) {
 
         $.each(resp.data.systems, function(index, loc) {
