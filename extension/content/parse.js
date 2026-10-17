@@ -1480,9 +1480,22 @@ var Parser = function() {
       ctF.DisplayStatus('Parsing Profile');
       // When `html` is supplied, parse from that fetched page (bulk profile
       // scan); otherwise parse from the live page DOM.
-      var root = (typeof html == 'string' && html.length > 0) ? $(html) : $(document);
-      var table = root.find('table#profile_show table');
-      var text = table.find('th:eq(1)').text();
+      var root, table, text;
+      if (typeof html == 'string' && html.length > 0) {
+        // $(html) strips html/head/body and returns body children as TOP-LEVEL
+        // nodes, so .find() won't reach a root-level table. Wrap in a div so
+        // every table is a descendant. Same root-handling the base/astro
+        // parsers use on fetched pages.
+        root = $('<div>').append($(html));
+      } else {
+        root = $(document);
+      }
+      table = root.find('table#profile_show table');
+      text = table.find('th:eq(1)').text();
+
+      if (table.length == 0) {
+        lg.log('ParseProfile: no table#profile_show table found on ' + (playerId ? ('player ' + playerId) : 'live page'));
+      }
 
       var invalid = root.find('center.error:contains(Invalid Player)');
       if (invalid && invalid.length > 0) {
