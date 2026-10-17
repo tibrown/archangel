@@ -67,10 +67,13 @@ def _servid_from_name(name):
 
 
 def _j(v):
-    """Serialize dict/list values for JSON columns; pass scalars through."""
-    if v is None or isinstance(v, (dict, list)):
-        return json.dumps(v) if v is not None else None
-    return v
+    """Serialize values for json_valid()-CHECKed columns: ALWAYS emit valid
+    JSON. dict/list -> json.dumps; any other scalar/string -> json.dumps of it
+    (so empty/invalid strings become a valid JSON string literal instead of
+    failing the column's json_valid CHECK). None stays None."""
+    if v is None:
+        return None
+    return json.dumps(v)
 
 
 def _num(v):
@@ -260,15 +263,17 @@ def _fan_out(item, servid, user_id):
     # fleet_details arrives under its own top-level key (not request.mode)
     if "fleet_details" in item:
         fd = item["fleet_details"]
-        db.upsert(
-            "fleet_details",
-            {"servid", "fleet_id"},
-            {
-                "servid": servid,
-                "fleet_id": _num(fd.get("fleetId")),
-                "details": _j(fd.get("details", [])),
-            },
-        )
+        fid = _num(fd.get("fleetId"))
+        if fid:  # fleet_id is NOT NULL; skip entries with no resolvable id
+            db.upsert(
+                "fleet_details",
+                {"servid", "fleet_id"},
+                {
+                    "servid": servid,
+                    "fleet_id": fid,
+                    "details": _j(fd.get("details", [])),
+                },
+            )
         return "fleet_details"
 
     req = item.get("request")

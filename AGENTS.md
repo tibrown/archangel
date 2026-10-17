@@ -77,6 +77,38 @@ bridge/.venv/bin/python reports/report.py bases   # every base + structure level
 - A Hermes skill `archangel-reports` documents this for the agent.
 - Don't run reports while `bridge/test_suite.sh` is truncating tables.
 
+## Web reports UI (`webapp/`)
+A read-only web frontend for browsing/querying every table with robust
+per-column filtering, global search, sorting, pagination, and CSV export.
+- **Location:** `webapp/` — FastAPI backend (`webapp/app.py`) + vanilla
+  single-page frontend (`webapp/static/`). No build step.
+- **Port:** `8020`, bound `0.0.0.0` (LAN-reachable). No auth (LAN-open).
+- **Run:** systemd **user** service `archangel-webapp.service` (symlinked into
+  `~/.config/systemd/user/`). `webapp/start.sh` sources `../bridge/.env`, waits
+  for MariaDB, then execs the **bridge venv** uvicorn
+  (`../bridge/.venv/bin/uvicorn app:app --app-dir ...`).
+  ```bash
+  systemctl --user status archangel-webapp
+  systemctl --user restart archangel-webapp
+  journalctl --user -u archangel-webapp -n 50
+  ```
+- **Read-only by construction:** only `SELECT` is issued; table/column names are
+  validated against `information_schema` before any SQL interpolation; all user
+  values are bound as `%s` params. Reuses `bridge/db.py` (auto-reads
+  `bridge/.env`), so no separate venv or creds.
+- **Server join:** every table with a `servid` FK is `LEFT JOIN`ed to the
+  `servers` table and exposes a virtual `server` column (the server *name*).
+  The UI shows `server` first and hides the raw `servid` by default (re-enable
+  via the Columns menu). `server` is filterable and sortable (mapped to
+  `s.server_name`), and is included in global search and CSV export.
+- **API:** `GET /api/tables` (tables + row counts + column metadata, incl. the
+  virtual `server`), `GET /api/servers`, `GET /api/tables/{t}/rows` (params:
+  `q` global search, `filters` = repeated JSON `{field,op,value[,value2]}`,
+  `sort`/`order`, `limit`/`offset`, `server`), `/api/tables/{t}/rows/{id}`,
+  `/api/tables/{t}/export.csv` (capped 10k rows).
+- JSON/blob columns are returned parsed and rendered as expandable cells.
+- Empty filter values are no-ops (never silently return 0 rows).
+
 ## Wire format (for anyone extending the bridge)
 All POST bodies are `application/x-www-form-urlencoded`:
 - storage/angellog endpoints: single field `data=<urlencoded JSON>` with `PlayerId` injected.
@@ -92,7 +124,12 @@ All POST bodies are `application/x-www-form-urlencoded`:
 Every element is ALSO logged verbatim to `capture_events` (lossless fallback).
 
 ## Key facts
-- Only server seeded: **Helion** (`helion.astroempires.com`), servid 1.
+- Server registry is DB-backed and auto-registering: the bridge seeds **Helion**
+  (`helion`, servid 1) on first boot to preserve legacy rows, then any
+  `*.astroempires.com` server gets its own row + next-free servid the first time
+  its name appears in a `dataupload`. `getservers` returns the whole `servers`
+  table, so the extension learns every registered server. `econs.GetGmServer()`
+  falls back to a name-only GmServer (bridge resolves servid by name on upload).
 - Astro Empires coords are 12 chars (`A00:00:00:00`), NOT 10 — schema uses CHAR(12).
 - `astro.wormhole` is a date string (VARCHAR(16)), but `system_astros.wormhole`
   is a 0/1 boolean (TINYINT) — different, don't conflate.
@@ -105,7 +142,8 @@ Every element is ALSO logged verbatim to `capture_events` (lossless fallback).
 - `getGates`/`getGuildGates` take `guildid` from `profiles.guild_id` via a LEFT
   JOIN on the base owner — it is NULL until that player's profile is captured.
 - `parse/script` requests carry no server name, so those queries are not
-  server-scoped (fine while Helion is the only server).
+  server-scoped (they return combined data across all registered servers; fine
+  while Helion is the dominant server, revisit if you need per-server gates).
 
 ## Critical invariants (do not break)
 - **`fake_list` is a honeypot — never touch it.** A decoy "capture mode" the AE
@@ -117,7 +155,9 @@ Every element is ALSO logged verbatim to `capture_events` (lossless fallback).
   fetched HTML) that copy the DOM and post it back to catch page-modifying
   extensions. `content/SpyDetect.js` sets a sticky `IsSpyFound()` flag
   (`window.sessionStorage` for synchronous per-tab reads, mirrored to
-  `chrome.storage.session` to survive reload); every UI-injection entry point is
+  `chrome.storage.local` to survive reload — content scripts cannot use
+  `chrome.storage.session`, that throws "Access to storage is not allowed from
+  this context"); every UI-injection entry point is
   gated on it (`BuildHints`, `pageUI.UpdatePage`, the content `DTimer`,
   `Gather.DoGather`).
 - **Defensive regex parsing — use `safeMatch()`.** `common/classes.js` defines
