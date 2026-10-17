@@ -420,9 +420,10 @@ https://aebits.win/aeBattleCalc?aT=Arm:27,Las:27,Pla:20,Sld:17,Level:54.67&aS=FT
         $(d).find('script').remove();
         return d.innerHTML;
       };
-      // update top of ae oage
-      var tab1 = msg.filter('.top').find('tr:eq(0)');
-      if (tab1) $('.top tr:eq(0)').html(sanitize(tab1.html()));
+      // Do NOT refresh the top bar: it contains the game's server/galaxy
+      // <select>, and replacing it with the fetched page's copy makes that
+      // dropdown render as an expanded list. The top-bar refresh is cosmetic
+      // only — parsing never needs it.
       var tab2 = msg.find('marquee');
       if (tab2) $('marquee').html(sanitize(tab2.html()));
       // look for map
