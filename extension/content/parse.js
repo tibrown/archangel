@@ -390,8 +390,8 @@ var Parser = function() {
       var whPresent = obj.find('center:contains(Wormhole)');
       var warmhole = 0;
       if (whPresent.length) {
-        var dt = ctF.GetDateFromString(whPresent.text()).date;
-        warmhole = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
+        var dt = ctF.GetDateFromString(whPresent.text());
+        if (dt) warmhole = dt.date.getFullYear() + '-' + (dt.date.getMonth() + 1) + '-' + dt.date.getDate();
       }
       var req = {
         request: {
@@ -506,8 +506,11 @@ var Parser = function() {
         if (whPresent.length) {
           var whText = $(whPresent).find("center").text();
           if (whText != '') {
-            var dt = ctF.GetDateFromString(whText).date;
-            warmhole = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
+            var dt = ctF.GetDateFromString(whText);
+            if (dt) {
+              var dtObj = dt.date;
+              warmhole = dtObj.getFullYear() + '-' + (dtObj.getMonth() + 1) + '-' + dtObj.getDate();
+            }
           }
         }
         var hasEyes = false;

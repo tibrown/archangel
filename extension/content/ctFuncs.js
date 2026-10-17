@@ -509,6 +509,10 @@ https://aebits.win/aeBattleCalc?aT=Arm:27,Las:27,Pla:20,Sld:17,Level:54.67&aS=FT
       if (!datestr) datestr = dstr.match(/[A-Z][a-z]{2} \d{1,2} \d{4}/);
       if (!datestr) datestr = dstr.match(/\d\d\d\d-\d\d-\d\d, \d\d:\d\d:\d\d/);
       if (!datestr) datestr = dstr.match(/\d\d\d\d-\d\d-\d\d/);
+      // No recognized timestamp (e.g. wormhole text without a date) is not an
+      // error — return null so callers can default. Without this guard, the
+      // datestr[0] below throws and logs a spurious 'error' for every one.
+      if (!datestr) return null;
       var obj = new Date(datestr);
       var dsisDate = obj.getFullYear() + '-' + ctF.PadZero(obj.getMonth() + 1) +
         '-' + ctF.PadZero(obj.getDate()) + ' ' + ctF.PadZero(obj.getHours()) + ':' +
