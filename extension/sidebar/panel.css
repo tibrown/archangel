@@ -149,3 +149,42 @@ div.auto-scout, div#divGuildSystems {
 .DSISPrefsActive {
   color: lightgreen;
 }
+
+/* --- Sidebar fit fixes: keep scan/status text inside the narrow sidebar --- */
+
+/* Bootstrap's .row applies -15px left/right margins which push content
+   outside the sidebar and cause horizontal overflow. Neutralize them. */
+.container-fluid .row,
+.container .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Make sure no child can force the panel wider than the sidebar. */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Long scan/status strings (coordinates, fleet names, status text) must
+   wrap instead of overflowing the left/right edges. */
+body,
+#divStatus,
+#divStatus .mstatus,
+#ScoutStatus,
+.ActiveScoutMsg,
+.displaystatus,
+.menuItem,
+.menuSelect {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+#divStatus,
+#divStatus .mstatus {
+  max-width: 100%;
+}
+
+#divStatus .mstatus > .row > div {
+  min-width: 0;
+}
