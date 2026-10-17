@@ -123,6 +123,11 @@ $(document).ready(function() {
       }));
     });
 
+    $('#btnScanGuildProfiles').click(function(e) {
+      $('.DSISIOState').html('<b>WORKING...</b>');
+      dp.SendToActiveTab(new Message('content', 'ScanGuildProfiles', {}));
+    });
+
   } catch (e) {
     lg.debug(e, 'Error in dpanel.ready:', {
       stack: true

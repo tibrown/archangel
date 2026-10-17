@@ -1475,19 +1475,22 @@ var Parser = function() {
     }
   }
 
-  this.ParseProfile = function(callback) {
+  this.ParseProfile = function(callback, html, playerId) {
     try {
       ctF.DisplayStatus('Parsing Profile');
-      var table = $('table#profile_show table');
+      // When `html` is supplied, parse from that fetched page (bulk profile
+      // scan); otherwise parse from the live page DOM.
+      var root = (typeof html == 'string' && html.length > 0) ? $(html) : $(document);
+      var table = root.find('table#profile_show table');
       var text = table.find('th:eq(1)').text();
 
-      var invalid = $('center.error:contains(Invalid Player)');
+      var invalid = root.find('center.error:contains(Invalid Player)');
       if (invalid && invalid.length > 0) {
         var data = {
           mode: 'invalidPlayer',
           sendingPlayerId: ctG.SendingPlayerId,
           universeId: 'z',
-          playerId: safeMatch(search, /\d+/, [0])
+          playerId: playerId || safeMatch(search, /\d+/, [0])
         };
         var req = {
           request: data
@@ -1495,11 +1498,11 @@ var Parser = function() {
         doAjax(req, null, true, errorHandler);
         return;
       }
-      var inactive = $('b:contains(Player Inactive)');
+      var inactive = root.find('b:contains(Player Inactive)');
       var daysInactive = null;
       if (inactive.length) daysInactive = safeMatch(inactive.text(), /\d+/, [0]);
 
-      var vac = $('b:contains(In Vacation Mode)');
+      var vac = root.find('b:contains(In Vacation Mode)');
       var daysinvac = null;
       if (vac.length) daysinvac = safeMatch(vac.text(), /\d+/, [0]);
       var data = {

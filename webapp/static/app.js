@@ -35,6 +35,10 @@ const state = {
   total: 0,
   expanded: new Set(),   // fleet_ids currently expanded (fleets table)
   fleetDetails: {},      // fleet_id -> details array (cached)
+  expandedGuilds: new Set(),  // "servid:guild_id" currently expanded (guilds table)
+  guildMembers: {},      // "servid:guild_id" -> member rows (cached)
+  expandedMembers: new Set(), // "servid:guild_id:player_id" expanded
+  playerProfiles: {},    // "servid:player_id" -> profile rows (cached)
 };
 
 function kindOf(col) {
@@ -168,6 +172,10 @@ function selectTable(name) {
   $("btn-cols").disabled = false;
   state.expanded = new Set();
   state.fleetDetails = {};
+  state.expandedGuilds = new Set();
+  state.guildMembers = {};
+  state.expandedMembers = new Set();
+  state.playerProfiles = {};
   $("fleet-expand").classList.toggle("hidden", !isFleetsTable());
   renderTableList();
   renderFilterBar();
@@ -363,12 +371,24 @@ function renderGridBody() {
   }
   $("empty").classList.add("hidden");
   const isFleets = isFleetsTable();
+  const isGuilds = isGuildsTable();
   for (const row of rows) {
     const tr = document.createElement("tr");
     for (const name of state.columns) {
       tr.appendChild(cellFor(name, row[name]));
     }
-    if (isFleets) {
+    if (isGuilds) {
+      const gKey = guildKey(row);
+      tr.classList.add("guild-row");
+      tr.dataset.gKey = gKey;
+      tr.title = "Click to expand members";
+      tr.addEventListener("click", () => toggleGuild(row, tr));
+      body.appendChild(tr);
+      if (state.expandedGuilds.has(gKey)) {
+        tr.classList.add("expanded");
+        insertGuildMembers(gKey, tr); // async; renders when loaded
+      }
+    } else if (isFleets) {
       tr.classList.add("fleet-row");
       tr.dataset.fleetId = row.fleet_id;
       tr.title = "Click to expand fleet details";
@@ -484,6 +504,168 @@ function collapseAllFleets() {
   state.expanded.clear();
   document.querySelectorAll("#grid-body tr.fleet-detail-row").forEach((r) => r.remove());
   document.querySelectorAll("#grid-body tr.fleet-row").forEach((r) => r.classList.remove("expanded"));
+}
+
+/* ---------------- guilds drill-down ---------------- */
+function isGuildsTable() {
+  return state.table && state.table.name === "guilds";
+}
+
+// A guild is identified by (servid, guild_id).
+function guildKey(row) {
+  return `${row.servid}:${row.guild_id}`;
+}
+
+async function fetchGuildMembers(gKey) {
+  if (state.guildMembers[gKey] !== undefined) return state.guildMembers[gKey];
+  const [servid, guildId] = gKey.split(":");
+  const p = new URLSearchParams();
+  p.set("limit", 500);
+  p.append("filters", JSON.stringify({ field: "guild_id", op: "eq", value: guildId }));
+  p.set("server", servid);
+  const res = await fetch(`/api/tables/guild_members/rows?` + p);
+  if (!res.ok) return [];
+  const data = await res.json();
+  state.guildMembers[gKey] = data.rows;
+  return data.rows;
+}
+
+async function fetchPlayerProfile(pKey) {
+  if (state.playerProfiles[pKey] !== undefined) return state.playerProfiles[pKey];
+  const [servid, playerId] = pKey.split(":");
+  const p = new URLSearchParams();
+  p.set("limit", 1);
+  p.append("filters", JSON.stringify({ field: "player_id", op: "eq", value: playerId }));
+  p.set("server", servid);
+  const res = await fetch(`/api/tables/profiles/rows?` + p);
+  if (!res.ok) return [];
+  const data = await res.json();
+  state.playerProfiles[pKey] = data.rows;
+  return data.rows;
+}
+
+function renderGuildMembersDetail(gKey, members) {
+  const tr = document.createElement("tr");
+  tr.className = "guild-detail-row";
+  const td = document.createElement("td");
+  td.colSpan = state.columns.length;
+  const wrap = document.createElement("div");
+  wrap.className = "guild-members";
+  const info = document.createElement("div");
+  info.className = "sub-title";
+  info.textContent = `${members.length} member(s) — click a member for profile details`;
+  wrap.appendChild(info);
+
+  const table = document.createElement("table");
+  table.className = "guild-members-grid";
+  const thead = document.createElement("thead");
+  thead.innerHTML = "<tr><th>Nick</th><th>Level</th><th>Player ID</th></tr>";
+  table.appendChild(thead);
+  const tbody = document.createElement("tbody");
+  for (const m of members) {
+    const mKey = `${m.servid}:${m.player_id}`;
+    const mtr = document.createElement("tr");
+    mtr.className = "gm-member-row";
+    mtr.dataset.mKey = mKey;
+    mtr.dataset.expanded = state.expandedMembers.has(mKey) ? "1" : "0";
+    mtr.innerHTML = `<td>${esc(m.nick)}</td><td>${esc(m.level)}</td><td>${esc(m.player_id)}</td>`;
+    mtr.title = "Click to expand profile";
+    mtr.addEventListener("click", () => toggleMemberProfile(mKey, mtr));
+    tbody.appendChild(mtr);
+    if (state.expandedMembers.has(mKey)) {
+      mtr.classList.add("expanded");
+    }
+  }
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  td.appendChild(wrap);
+  tr.appendChild(td);
+  return tr;
+}
+
+function renderPlayerProfileDetail(mKey, profiles) {
+  const tr = document.createElement("tr");
+  tr.className = "gm-profile-row";
+  const td = document.createElement("td");
+  td.colSpan = 3;
+  if (!profiles.length) {
+    td.innerHTML = '<div class="muted">No profile captured for this player yet.</div>';
+    tr.appendChild(td);
+    return tr;
+  }
+  const p = profiles[0];
+  const wrap = document.createElement("div");
+  wrap.className = "player-profile";
+  const grid = document.createElement("div");
+  grid.className = "player-profile-grid";
+  const pairs = [
+    ["Player", p.player_name],
+    ["Level", p.level],
+    ["Guild", p.guild_name || (p.guild_tag ? `[${p.guild_tag}]` : "")],
+    ["Inactive (days)", p.inactive_days],
+    ["Days in vacation", p.days_in_vac],
+  ];
+  for (const [k, v] of pairs) {
+    const key = document.createElement("div");
+    key.className = "pp-key";
+    key.textContent = k;
+    const val = document.createElement("div");
+    val.className = "pp-val";
+    val.textContent = v == null || v === "" ? "—" : v;
+    grid.append(key, val);
+  }
+  wrap.appendChild(grid);
+  td.appendChild(wrap);
+  tr.appendChild(td);
+  return tr;
+}
+
+async function insertGuildMembers(gKey, guildTr) {
+  const members = await fetchGuildMembers(gKey);
+  const next = guildTr.nextSibling;
+  if (next && next.classList && next.classList.contains("guild-detail-row")) next.remove();
+  const detail = renderGuildMembersDetail(gKey, members);
+  guildTr.after(detail);
+  // render any already-expanded member profiles below their member rows
+  for (const mtr of detail.querySelectorAll("tr.gm-member-row")) {
+    if (mtr.dataset.expanded === "1") {
+      insertPlayerProfile(mtr.dataset.mKey, mtr);
+    }
+  }
+}
+
+async function insertPlayerProfile(mKey, memberTr) {
+  const profiles = await fetchPlayerProfile(mKey);
+  const next = memberTr.nextSibling;
+  if (next && next.classList && next.classList.contains("gm-profile-row")) next.remove();
+  memberTr.after(renderPlayerProfileDetail(mKey, profiles));
+}
+
+async function toggleGuild(row, tr) {
+  const gKey = guildKey(row);
+  if (state.expandedGuilds.has(gKey)) {
+    state.expandedGuilds.delete(gKey);
+    tr.classList.remove("expanded");
+    const next = tr.nextSibling;
+    if (next && next.classList && next.classList.contains("guild-detail-row")) next.remove();
+    return;
+  }
+  state.expandedGuilds.add(gKey);
+  tr.classList.add("expanded");
+  await insertGuildMembers(gKey, tr);
+}
+
+async function toggleMemberProfile(mKey, memberTr) {
+  if (state.expandedMembers.has(mKey)) {
+    state.expandedMembers.delete(mKey);
+    memberTr.classList.remove("expanded");
+    const next = memberTr.nextSibling;
+    if (next && next.classList && next.classList.contains("gm-profile-row")) next.remove();
+    return;
+  }
+  state.expandedMembers.add(mKey);
+  memberTr.classList.add("expanded");
+  await insertPlayerProfile(mKey, memberTr);
 }
 
 function renderPager() {

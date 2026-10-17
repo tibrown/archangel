@@ -199,6 +199,22 @@ input[type="search"], select {
   white-space: nowrap;
 }
 .fleet-expand { display: inline-flex; gap: 8px; }
+
+/* ---------- guilds drill-down ---------- */
+#grid tr.guild-row { cursor: pointer; }
+#grid tr.guild-row.expanded { background: var(--panel-2); }
+#grid tr.guild-detail-row td { background: var(--bg); padding: 10px 16px; }
+.guild-members .sub-title { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.guild-members-grid { border-collapse: collapse; width: 100%; font-size: 13px; }
+.guild-members-grid th { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--border); color: var(--muted); font-weight: 600; }
+.guild-members-grid td { padding: 4px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+#grid tr.gm-member-row { cursor: pointer; }
+#grid tr.gm-member-row:hover { background: var(--panel-2); }
+#grid tr.gm-member-row.expanded { background: var(--panel-2); }
+#grid tr.gm-profile-row td { background: var(--panel); padding: 8px 24px; }
+.player-profile-grid { display: grid; grid-template-columns: minmax(140px, auto) 1fr; gap: 3px 16px; font-size: 13px; max-width: 420px; }
+.player-profile-grid .pp-key { color: var(--muted); text-align: right; }
+.player-profile-grid .pp-val { font-weight: 600; }
 #grid td.num { text-align: right; font-variant-numeric: tabular-nums; }
 #grid td.json { color: var(--accent-2); cursor: pointer; font-family: var(--mono); font-size: 12px; }
 #grid td.null { color: var(--muted); font-style: italic; }

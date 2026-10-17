@@ -623,6 +623,25 @@ async def parse_script(dbname: str, request: Request):
     if mode == "getGuildSystems":
         return result({"systems": []})
 
+    if mode == "getPlayers":
+        # Bulk profile scan: distinct player ids the extension should fetch and
+        # parse. Scoped to one server when a servid is supplied (the extension
+        # sends the current one); union of known profiles and guild members so
+        # players sighted only as a guildmate are still scanned.
+        servid = req.get("servid")
+        if servid:
+            rows = db.query(
+                "SELECT player_id FROM profiles WHERE servid = %s "
+                "UNION SELECT player_id FROM guild_members WHERE servid = %s",
+                (servid, servid),
+            )
+        else:
+            rows = db.query(
+                "SELECT player_id FROM profiles "
+                "UNION SELECT player_id FROM guild_members"
+            )
+        return result({"players": [r["player_id"] for r in rows]})
+
     if mode == "player_summary":
         return result(
             {"tech": [], "bases": [], "players": [], "fleets": [], "comments": []}

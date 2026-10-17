@@ -396,6 +396,124 @@ var AutoScouter = function() {
     }
   }
 
+  // Iterate over every known player on the current server and scan their
+  // profile pages, so the profiles table is populated for players we've only
+  // sighted as guildmates / base owners. Reuses the connection pool (DoGetAE),
+  // so it never floods the game server. Callback fires once the whole list is
+  // done (or the pool stalls on a rate-limit abort).
+  var profileScanQueue = [];
+  this.ScanAllProfiles = function(callback) {
+    try {
+      profileScanQueue = [];
+      if (!GmServer || !GmServer.DsisServers || GmServer.DsisServers.length == 0) {
+        ctF.DisplayStatus('No DSIS Server for profile scan');
+        econs.CallBack(callback, 'No DSIS Server');
+        return;
+      }
+      ctF.DisplayStatus('Querying players to scan...');
+      var req = {
+        request: {
+          mode: 'getPlayers',
+          sendingPlayerId: ctG.SendingPlayerId
+        }
+      };
+      // scope to the current server so we don't scan every server's roster;
+      // only when a real servid is known (not the -1 sentinel)
+      if (typeof GmServer.servid != 'undefined' && GmServer.servid > 0) req.request.servid = GmServer.servid;
+      dsisReq.MakeRequest(req, GmServer.DsisServers[0], function(resp) {
+        try {
+          var players = (resp && resp.data && resp.data.players) ? resp.data.players : [];
+          aScout.log('ScanAllProfiles: ' + players.length + ' players to scan');
+          ctF.DisplayStatus('Scanning ' + players.length + ' profiles');
+          profileScanQueue = players.slice();
+          aScout.IterateProfiles(callback);
+        } catch (e) {
+          lg.debug(e, 'Error in ScanAllProfiles.getPlayers:', {
+            stack: true
+          });
+          econs.CallBack(callback, 'getPlayers failed');
+        }
+      });
+    } catch (e) {
+      lg.debug(e, 'Error in ScanAllProfiles:', {
+        stack: true
+      });
+      econs.CallBack(callback, 'ScanAllProfiles failed');
+    }
+  }
+
+  // Scan the current guild page's members' profiles. Reads the member player
+  // ids from the live guild page (same rows ParseGuildPage uses), then fetches
+  // and parses each member's profile.aspx page via the shared profile-scan
+  // queue. Reuses the connection pool, so it never floods the game server.
+  this.ScanGuildProfiles = function(callback) {
+    try {
+      var rows = $('.layout.listing.sorttable tr:gt(0)');
+      var ids = [];
+      for (var i = 0; i < rows.length; i++) {
+        var elements = $('td', rows.eq(i));
+        var playerId = elements.eq(0).text();
+        if (playerId) ids.push(playerId);
+      }
+      aScout.log('ScanGuildProfiles: ' + ids.length + ' members to scan');
+      ctF.DisplayStatus('Scanning ' + ids.length + ' member profiles');
+      profileScanQueue = ids;
+      aScout.IterateProfiles(callback);
+    } catch (e) {
+      lg.debug(e, 'Error in ScanGuildProfiles:', {
+        stack: true
+      });
+      econs.CallBack(callback, 'ScanGuildProfiles failed');
+    }
+  }
+
+  this.IterateProfiles = function(callback) {
+    try {
+      if (aScout.IsPaused === true) {
+        aScout.profileScanResume = callback;
+        return;
+      }
+      var pid = profileScanQueue.shift();
+      if (typeof pid == 'undefined') {
+        aScout.log('Done with profiles in IterateProfiles');
+        ctF.DisplayStatus('Profile Scan Done');
+        econs.CallBack(callback, 'done');
+        return;
+      }
+      aScout.Profile(pid, function() {
+        if (profileScanQueue.length > 0) aScout.IterateProfiles(callback);
+        else {
+          aScout.log('Done with profiles in IterateProfiles');
+          ctF.DisplayStatus('Profile Scan Done');
+          econs.CallBack(callback, 'done');
+        }
+      });
+    } catch (e) {
+      lg.debug(e, 'Error in IterateProfiles:', {
+        stack: true
+      });
+    }
+  }
+
+  // scan one player's profile.aspx page; parse + upload the fetched HTML
+  this.Profile = function(playerId, callback) {
+    try {
+      aScout.log('Scanning profile for player: ' + playerId);
+      aScout.GetAE('profile.aspx?player=' + playerId, function(page) {
+        parse.ParseProfile(null, page, playerId);
+        econs.CallBack(callback, 'done');
+      }, null, null, function() {
+        // error handler: keep the loop moving, don't stall on one bad page
+        econs.CallBack(callback, 'error');
+      });
+    } catch (e) {
+      lg.debug(e, 'Error in Profile:', {
+        stack: true
+      });
+      econs.CallBack(callback, 'error');
+    }
+  }
+
   // get a list of all regions with fleet
   // inventory them
   // get a list of stray scouts

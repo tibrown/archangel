@@ -131,6 +131,11 @@ chrome.runtime.onMessage.addListener(function(msg) {
         return;
       }
 
+      if (msg.action == "ScanGuildProfiles") {
+        aScout.ScanGuildProfiles();
+        return;
+      }
+
       if (msg.action == "ScanList") {
         aScout.ScanList(msg.actionArgs.ListText, ctF.FlushUpload);
         return;
@@ -717,6 +722,7 @@ var ct = {
         case "profile":
           parse.ParseProfile(function(data) {
             ctF.SendProfileSummary(data.player_id);
+            aScout.ScanAllProfiles();
           });
           break;
         case "empire":
