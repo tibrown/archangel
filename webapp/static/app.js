@@ -814,12 +814,11 @@ function renderBaseDetails(row) {
   const grid = document.createElement("div");
   grid.className = "base-detail-grid";
 
-  // JG is the headline field: jumpgate INT, 1 = has a Jump Gate.
+  // JG is the headline field: jumpgate INT stores the Jump Gate LEVEL (0 = none).
   const jgVal =
-    row.jumpgate === 1 ? "YES" :
-    row.jumpgate === 0 ? "No" :
-    (row.jumpgate == null || row.jumpgate === "") ? "—" : String(row.jumpgate);
-  grid.appendChild(ppRow("JG (Jump Gate)", jgVal, row.jumpgate === 1));
+    (row.jumpgate == null || row.jumpgate === "") ? "—" :
+    row.jumpgate === 0 ? "No" : `Lv ${row.jumpgate}`;
+  grid.appendChild(ppRow("JG (Jump Gate)", jgVal, row.jumpgate > 0));
   grid.appendChild(ppRow("Owner", [row.owner_name, `(${row.owner_id})`].filter(Boolean).join(" ")));
   grid.appendChild(ppRow("Owner Guild", row.owner_guild_tag));
   grid.appendChild(ppRow("Owner Level", row.owner_level));

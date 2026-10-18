@@ -387,6 +387,19 @@ var Parser = function() {
       if (structure_levels3.length > 0) structure_levels += structure_levels3;
       structure_levels = structure_levels.substr(0, structure_levels.length - 1);
 
+      // Jump Gate level: find "Jump Gate" in the structures list and read its
+      // paired level from structure_levels (both are '*' separated, same order).
+      var jgLevel = 0;
+      var jgNames = structures.split('*');
+      var jgLvls = structure_levels.split('*');
+      for (var jgi = 0; jgi < jgNames.length; jgi++) {
+        if (jgNames[jgi].indexOf('Jump Gate') !== -1) {
+          var jgLvl = parseInt(jgLvls[jgi], 10);
+          if (!isNaN(jgLvl)) jgLevel = jgLvl;
+          break;
+        }
+      }
+
       var whPresent = obj.find('center:contains(Wormhole)');
       var warmhole = 0;
       if (whPresent.length) {
@@ -416,6 +429,7 @@ var Parser = function() {
           last_pillaged: last_pillaged,
           uc_stability: stability,
           wormHole: warmhole,
+          jumpgate: jgLevel,
           universeId: universeId,
           angelVersion: econs.AngelVersion,
           sendingPlayerId: ctG.SendingPlayerId,
