@@ -38,6 +38,34 @@ var PageUI = function () {
     }
   };
 
+  this.InjectGalaxyScanButton = function () {
+    try {
+      // Idempotent: PublicParsePage fires on every message, so guard against
+      // injecting a second button on re-entry.
+      if ($('#galaxyScanBtn').length > 0) return;
+      var btn = $(
+        '<button id="galaxyScanBtn" type="button" style="margin:6px 0;">' +
+          'Scan Galaxy</button>'
+      );
+      btn.on('click', function () {
+        try {
+          aScout.ScanGalaxyReport(ctF.FlushUpload);
+        } catch (err) {
+          lg.debug(err, 'GalaxyScanBtn.click');
+        }
+      });
+      var tbl = $('table.sorttable');
+      if (tbl.length > 0) {
+        tbl.before(btn);
+      } else {
+        // Fallback anchor if the report table isn't present yet.
+        $('#content').prepend(btn);
+      }
+    } catch (e) {
+      lg.debug(e, 'Error in InjectGalaxyScanButton');
+    }
+  };
+
   this.MassProdHelper = function () {
     var row1 = document.getElementById("row1");
     var tfoot = row1.parentNode.nextSibling;

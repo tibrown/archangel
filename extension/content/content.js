@@ -845,10 +845,10 @@ var ct = {
           break;
         case "report":
           // report.aspx?view=galaxy is a seed list of player/base/location rows.
-          // Kick off the recursive galaxy scan (systems -> astros -> bases ->
-          // player profiles) when the user opens it.
+          // The recursive galaxy scan (systems -> astros -> bases -> profiles) is
+          // started manually via an on-page "Scan Galaxy" button, not on page load.
           if (search.match(/view=galaxy/) != null) {
-            aScout.ScanGalaxyReport(ctF.FlushUpload);
+            pageUI.InjectGalaxyScanButton();
           }
           break;
         case "account":
