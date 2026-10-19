@@ -141,6 +141,11 @@ chrome.runtime.onMessage.addListener(function(msg) {
         return;
       }
 
+      if (msg.action == "ScanGalaxyReport") {
+        aScout.ScanGalaxyReport(ctF.FlushUpload);
+        return;
+      }
+
       if (msg.action == "Launcher") {
         var mode = msg.actionArgs.Mode;
         var dstr = $("#duration").text();
@@ -314,6 +319,9 @@ chrome.runtime.onMessage.addListener(function(msg) {
               break;
             case "ScanBaseRegions":
               aScout.BaseRegions(ctF.FlushUpload);
+              break;
+            case "ScanGalaxyReport":
+              aScout.ScanGalaxyReport(ctF.FlushUpload);
               break;
             case "ClosestGate":
               gates.GetClosest();
@@ -834,6 +842,14 @@ var ct = {
           break;
         case "guild":
           parse.ParseGuildPage();
+          break;
+        case "report":
+          // report.aspx?view=galaxy is a seed list of player/base/location rows.
+          // Kick off the recursive galaxy scan (systems -> astros -> bases ->
+          // player profiles) when the user opens it.
+          if (search.match(/view=galaxy/) != null) {
+            aScout.ScanGalaxyReport(ctF.FlushUpload);
+          }
           break;
         case "account":
           ctF.CheckConfig();

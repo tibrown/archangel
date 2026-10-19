@@ -508,7 +508,62 @@ var AutoScouter = function() {
     }
   }
 
-  // scan one player's profile.aspx page; parse + upload the fetched HTML
+  // Scan a galaxy report (report.aspx?view=galaxy) and recurse into every
+  // system it lists. The report is a seed list of {player, base, location}
+  // rows; we dedupe the locations into a system list, then reuse the standard
+  // system pipeline (System -> ParseSystem/recorded -> IterateAstros -> Astro
+  // -> ParseBase/recorded) so each system's astros AND bases are captured.
+  // After the systems, we scan the unique players' profiles too.
+  this.ScanGalaxyReport = function(callback) {
+    try {
+      aScout.log('Starting Galaxy Report scan');
+      ctF.DisplayStatus('Fetching galaxy report...');
+      aScout.GetAE('report.aspx?view=galaxy', function(page) {
+        parse.ParseGalaxyReport(page, function(rows) {
+          aScout.log('ScanGalaxyReport: ' + rows.length + ' base rows from report');
+          if (!rows || rows.length == 0) {
+            ctF.DisplayStatus('Galaxy report: no rows found');
+            econs.CallBack(callback, 'no rows');
+            return;
+          }
+          // dedupe locations into a system list (drop the astro slot)
+          var seen = {};
+          var systems = [];
+          var players = [];
+          var seenPlayers = {};
+          $.each(rows, function(i, r) {
+            var sys = safeMatch(r.location, /([A-Z]\d\d:\d\d:\d\d)/, [1]);
+            if (sys && !seen[sys]) {
+              seen[sys] = true;
+              systems.push({ coords: sys });
+            }
+            if (r.playerId && !seenPlayers[r.playerId]) {
+              seenPlayers[r.playerId] = true;
+              players.push({ playerId: r.playerId, nick: r.playerName });
+            }
+          });
+          aScout.log('ScanGalaxyReport: ' + systems.length + ' unique systems, ' + players.length + ' unique players');
+          ctF.DisplayStatus('Scanning ' + systems.length + ' systems from galaxy report');
+          aScout.GuildSystems = systems;
+          cnt = 0;
+          aScout.IterateSystems(function() {
+            ctF.DisplayStatus('Galaxy report systems done; scanning ' + players.length + ' player profiles');
+            profileScanQueue = players;
+            aScout.IterateProfiles(function() {
+              ctF.DisplayStatus('Galaxy report scan complete');
+              econs.CallBack(callback, 'done');
+            });
+          });
+        });
+      });
+    } catch (e) {
+      lg.debug(e, 'Error in ScanGalaxyReport:', {
+        stack: true
+      });
+      econs.CallBack(callback, 'error');
+    }
+  }
+
   this.Profile = function(playerId, callback) {
     try {
       aScout.log('Scanning profile for player: ' + playerId);

@@ -1016,6 +1016,43 @@ var Parser = function() {
     }
   }
 
+  // Parse a galaxy report page (report.aspx?view=galaxy). This is a SEED LIST,
+  // not a capture: each row is {player, base, location}. We return the rows so
+  // the scout driver can turn them into a deduped system list and scan each
+  // system (which recurses into astros + bases via the recorded-scout path).
+  // No upload happens here — the report itself is not stored.
+  this.ParseGalaxyReport = function(msg, callback) {
+    try {
+      parse.log('Parsing Galaxy Report');
+      var root = (msg == null) ? $(document) : $('<div>').append($(msg));
+      var rows = [];
+      // The report table is the sorttable listing with Player/Base/Location
+      // columns. Skip the header row (thead) and any tfoot.
+      root.find('table.sorttable tbody tr').each(function() {
+        var tds = $(this).find('td');
+        if (tds.length < 3) return;
+        var playerA = tds.eq(0).find('a[href*="profile.aspx"]');
+        var baseA = tds.eq(1).find('a[href*="base.aspx"]');
+        var locA = tds.eq(2).find('a[href*="map.aspx?loc="]');
+        if (playerA.length == 0 || baseA.length == 0 || locA.length == 0) return;
+        rows.push({
+          playerId: safeMatch(playerA.attr('href'), /player=(\d+)/, [1]),
+          playerName: playerA.text().trim(),
+          baseId: safeMatch(baseA.attr('href'), /base=(\d+)/, [1]),
+          baseName: baseA.text().trim(),
+          location: safeMatch(locA.attr('href'), /loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1])
+        });
+      });
+      parse.log('ParseGalaxyReport: ' + rows.length + ' base rows');
+      econs.CallBack(callback, rows);
+    } catch (e) {
+      lg.debug(e, 'Error in ParseGalaxyReport:', {
+        stack: true
+      });
+      econs.CallBack(callback, []);
+    }
+  }
+
   this.ParseSystem = function(msg, callback) {
     try {
       var addFakeEyeData = false;
