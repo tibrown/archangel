@@ -215,11 +215,20 @@ var Parser = function() {
     try {
       var didUpload = false;
       parse.log('Parsing Base');
-      var isFoggy = $('center:contains(Recorded data from)').length > 0;
+      // Recorded/scout pages carry "<center>Recorded data from N day(s) ago."
+      // Detect against whatever source we're parsing (live DOM for manual view,
+      // fetched fragment for autoscout), then hand off to the scout parser —
+      // these pages have no eyes data but do expose astro attributes/fleets.
+      var isFoggy = false;
+      if (msg == null) {
+        isFoggy = $('center:contains(Recorded data from)').length > 0;
+      } else {
+        isFoggy = $(msg).filter('center:contains(Recorded data from)').length > 0
+          || $('<div>').append($(msg)).find('center:contains(Recorded data from)').length > 0;
+      }
       if (isFoggy) {
-        parse.log('Is FOGGY');
-        // fakeEyesAstroBase(coords, isFoggy);
-        return;
+        parse.log('Is FOGGY -> recorded base, delegating to ParseRecordedBase');
+        return parse.ParseRecordedBase(msg, callback, baseId);
       }
       ctF.DisplayStatus('Parsing Base...');
       var obj, base_id, headTable, last_pillaged, stability;
@@ -460,6 +469,132 @@ var Parser = function() {
       else econs.CallBack(callback, [], didUpload);
     } catch (e) {
       lg.debug(e, 'Error in ParseBase:', {
+        stack: true
+      });
+      econs.CallBack(callback, [], false);
+    }
+  }
+
+  // Parse a recorded/scout base page ("Recorded data from N ago"). Unlike a
+  // live-eyes base these pages carry NO construction/production/research or
+  // economy rows, but they DO expose the astro attributes (Astro Type, Area,
+  // Solar Energy, Fertility, resource bonuses), owner/commander, structures
+  // AND defenses. Sends ONLY the fields it owns so a later live-eyes capture
+  // (or another scout) can't be clobbered — see the bridge base handler's
+  // present-key-only upsert.
+  this.ParseRecordedBase = function(msg, callback, baseId) {
+    try {
+      parse.log('Parsing Recorded Base');
+      var didUpload = false;
+      var root = (msg == null) ? $(document) : $('<div>').append($(msg));
+
+      // --- location / astro attributes --------------------------------
+      var loc = root.find('a[href*="map.aspx?loc="]').first();
+      var coords = safeMatch(loc.text(), /[A-Z]\d\d:\d\d:\d\d:\d\d/, [0]);
+      if (!coords) coords = safeMatch(loc.attr('href'), /loc=([A-Z]\d\d:\d\d:\d\d:\d\d)/, [1]);
+      var universeId = safeMatch(coords, /[A-Z]/, [0]);
+
+      var bodyTable = root.find('table:contains(Location)').last();
+      var leftTd = bodyTable.find('tr:first td:first').html() || '';
+      var label = function(re) {
+        var m = leftTd.match(re);
+        return (m && m[1] != null) ? m[1].trim() : '';
+      };
+      var astro_type = label(/<b>Astro Type:<\/b>\s*([^<]+)/);
+      var terrain    = label(/<b>Terrain:<\/b>\s*([^<]+)/);
+      var area       = label(/<b>Area:<\/b>\s*([^<]+)/);
+      var solar_energy = label(/<b>Solar Energy:<\/b>\s*([^<]+)/);
+      var fertility  = label(/<b>Fertility:<\/b>\s*([^<]+)/);
+
+      // --- resources (Metal/Gas/Crystals) -----------------------------
+      var res = { metal: '', gas: '', crystals: '' };
+      root.find('#base_resources tr').each(function() {
+        var c = $(this).children('td');
+        if (c.length === 2) {
+          var k = c.eq(0).text().trim().toLowerCase();
+          if (k in res) res[k] = c.eq(1).text().trim();
+        }
+      });
+
+      // --- owner -------------------------------------------------------
+      var ownerTd = root.find('td:contains(Base Owner)');
+      var oLink = ownerTd.find('a[href*="profile.aspx"]').first();
+      var owner_id = safeMatch(oLink.attr('href'), /player=(\d+)/, [1]);
+      var ownerNameRaw = oLink.text().trim();
+      var ownerName = ownerNameRaw, ownerGuildTag = '';
+      var om = ownerNameRaw.match(/^\[(.+?)\]\s*(.*)$/);
+      if (om) { ownerGuildTag = om[1]; ownerName = om[2]; }
+      var ownerLevel = safeMatch(oLink.attr('title'), /Player level ([\d.]+)/, [1]);
+
+      // --- commander ----------------------------------------------------
+      var cmdrTd = root.find('td:contains(Base Commander)');
+      var commander = cmdrTd.find('a').first().text().trim();
+
+      // --- staleness ----------------------------------------------------
+      var staleness = safeMatch(root.find('center:contains(Recorded data from)').text(), /Recorded data from (.+?)\./, [1]);
+
+      // --- structures + defenses ---------------------------------------
+      var base_name = safeMatch(root.find('th.dropcap').first().text(), /\S.*/, [0]).trim();
+      var structures = '', structure_levels = '', defenses = '';
+      var cleanCol = function(td) {
+        return td.html().replace(/<br>/g, '*').replace(/<span style="white-space: nowrap;">/g, '')
+          .replace(/<\/span>/g, '');
+      };
+      var strdef = root.find('table#base_resume-structures').find('table tr:last').children('td');
+      if (strdef.length >= 2) {
+        structures = cleanCol(strdef.eq(0));
+        structure_levels = cleanCol(strdef.eq(1));
+        if (strdef.length >= 4) {
+          var s2 = cleanCol(strdef.eq(2)), l2 = cleanCol(strdef.eq(3));
+          if (s2 && s2.trim()) { structures += s2; structure_levels += l2; }
+        }
+        structures = structures.replace(/\*+$/, '');
+        structure_levels = structure_levels.replace(/\*+$/, '');
+        if (strdef.length >= 6) {
+          var dNames = cleanCol(strdef.eq(4)).replace(/^\*+|\*+$/g, '');
+          var dUnits = cleanCol(strdef.eq(5)).replace(/^\*+|\*+$/g, '');
+          var nArr = dNames.split('*'), uArr = dUnits.split('*'), parts = [];
+          for (var i = 0; i < nArr.length; i++) {
+            if (nArr[i].trim()) parts.push(nArr[i].trim() + ' ' + (uArr[i] || '').trim());
+          }
+          defenses = parts.join('*');
+        }
+      }
+
+      var req = {
+        request: {
+          mode: 'base',
+          coords: coords,
+          base_id: baseId || '',
+          base_name: base_name,
+          astro_type: astro_type,
+          terrain: terrain,
+          area: area,
+          solar_energy: solar_energy,
+          fertility: fertility,
+          metal: res.metal,
+          gas: res.gas,
+          crystals: res.crystals,
+          owner_id: owner_id,
+          ownerName: ownerName,
+          ownerGuildTag: ownerGuildTag,
+          ownerLevel: ownerLevel,
+          commander: commander,
+          structures: structures,
+          structure_levels: structure_levels,
+          defenses: defenses,
+          recorded_days_ago: staleness,
+          universeId: universeId,
+          sendingPlayerId: ctG.SendingPlayerId
+        }
+      };
+      ctF.DisplayStatus('Parsed recorded base:' + coords + ' (' + (ownerName || '?') + ')');
+      ctF.PushUpload(req);
+      didUpload = true;
+      // scout pages have no fleet_ids to detail; return empty fleet list
+      econs.CallBack(callback, [], didUpload);
+    } catch (e) {
+      lg.debug(e, 'Error in ParseRecordedBase:', {
         stack: true
       });
       econs.CallBack(callback, [], false);

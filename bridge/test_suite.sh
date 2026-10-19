@@ -49,6 +49,7 @@ ERR_BEFORE=$($DB "SELECT COUNT(*) FROM error_log WHERE base_url='helion'")
 # when a test fails.
 cleanup_test_data() {
   $DB "DELETE FROM bases WHERE coords='A00:00:00:00'"
+  $DB "DELETE FROM bases WHERE coords='A00:00:00:09'"
   $DB "DELETE FROM astros WHERE coord='A00:00:00:01'"
   $DB "DELETE FROM systems WHERE system='A00:00:00'"
   $DB "DELETE FROM system_astros WHERE system='A00:00:00'"
@@ -80,6 +81,31 @@ N=$($DB "SELECT COUNT(*) FROM bases WHERE coords='A00:00:00:00'")
 check "bases row count" 1 "$N"
 J=$($DB "SELECT jumpgate FROM bases WHERE coords='A00:00:00:00'")
 check "jumpgate captured" 5 "$J"
+
+note "2b. recorded-base capture + only-update-what's-present"
+# 1) Seed a live-eyes base row with construction/production/research set.
+upload '[{"request":{"mode":"base","coords":"A00:00:00:09","base_id":900,"base_name":"Home","owner_id":4242,"ownerName":"Me","construction":"100","production":"200","research":"50","jumpgate":3,"sendingPlayerId":4242}}]' >/dev/null
+# 2) A recorded/scout capture for the same coords sends ONLY the scout-owned
+#    fields (astro attributes + defenses + staleness). It must NOT blank the
+#    live-only construction/production/research columns set in step 1.
+upload '[{"request":{"mode":"base","coords":"A00:00:00:09","astro_type":"Planet","terrain":"Craters","area":"85","solar_energy":"2","fertility":"5","metal":"4","gas":"3","crystals":"2","structures":"Urban Structures*","structure_levels":"19*","defenses":"Photon Turrets 10 / 10","recorded_days_ago":"1 day","ownerName":"Me","sendingPlayerId":4242}}]' >/dev/null
+A=$($DB "SELECT COALESCE(area,-1) FROM bases WHERE coords='A00:00:00:09'")
+check "recorded area captured" 85 "$A"
+M=$($DB "SELECT metal,gas,crystals FROM bases WHERE coords='A00:00:00:09'" | sed 's/\t/ /g')
+check "recorded resources captured" "4 3 2" "$M"
+D=$($DB "SELECT defenses FROM bases WHERE coords='A00:00:00:09'")
+check "recorded defenses captured" "Photon Turrets 10 / 10" "$D"
+R=$($DB "SELECT recorded_days_ago FROM bases WHERE coords='A00:00:00:09'")
+check "recorded staleness captured" "1 day" "$R"
+C=$($DB "SELECT COALESCE(construction,-1) FROM bases WHERE coords='A00:00:00:09'")
+check "live construction preserved (not blanked)" 100 "$C"
+P=$($DB "SELECT COALESCE(production,-1) FROM bases WHERE coords='A00:00:00:09'")
+check "live production preserved (not blanked)" 200 "$P"
+R2=$($DB "SELECT COALESCE(research,-1) FROM bases WHERE coords='A00:00:00:09'")
+check "live research preserved (not blanked)" 50 "$R2"
+# recorded capture must leave jumpgate untouched too (it did not send it)
+J2=$($DB "SELECT COALESCE(jumpgate,-1) FROM bases WHERE coords='A00:00:00:09'")
+check "jumpgate preserved through recorded capture" 3 "$J2"
 
 note "3. dataupload: astro"
 upload '[{"request":{"mode":"astro","coord":"A00:00:00:01","baseId":0,"terrain":"Metalic","debris":"0","hasEyes":true,"sendingPlayerId":4242}}]' >/dev/null
@@ -151,7 +177,7 @@ note "14. capture_events lossless log"
 N=$($DB "SELECT COUNT(DISTINCT mode) FROM capture_events")
 echo "  distinct modes captured: $N"
 N=$($DB "SELECT COUNT(*) FROM capture_events")
-check "capture_events total rows (+12 = 11 modes + 1 fleet re-sighting)" $((CAP_BEFORE+12)) "$N"
+check "capture_events total rows (+14 = 13 modes + 1 fleet re-sighting)" $((CAP_BEFORE+14)) "$N"
 
 note "15. parse/script query handlers (empty-but-valid)"
 R=$(curl -s -X POST "$BASE/archangel/parse/script" --data-urlencode 'data={"request":{"mode":"jg_search","sloc":"A00:00:00:00","dloc":"A00:00:00:05","method":"closest"}}')

@@ -40,6 +40,17 @@ CREATE TABLE IF NOT EXISTS bases (
   occupier_guild_tag VARCHAR(8) NULL,
   terrain        VARCHAR(32) NULL,
   debris         BIGINT NULL,
+  -- recorded/scout astro attributes (present on scout "Recorded data" pages
+  -- and on live pages; a live-eye capture may fill some of these too)
+  astro_type     VARCHAR(32) NULL,
+  area           INT NULL,
+  solar_energy   INT NULL,
+  fertility      INT NULL,
+  metal          INT NULL,
+  gas            INT NULL,
+  crystals       INT NULL,
+  recorded_days_ago VARCHAR(16) NULL,
+  defenses     TEXT NULL,
   structures     TEXT NULL,
   structure_levels TEXT NULL,
   construction   VARCHAR(32) NULL,
@@ -238,3 +249,19 @@ CREATE TABLE IF NOT EXISTS error_log (
   error_report   JSON NULL,
   created_at     TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3)
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------------
+-- Idempotent in-place migration for existing installs.
+-- schema.sql uses CREATE TABLE IF NOT EXISTS, so it will NOT add the new
+-- scout columns to an already-created bases table. MariaDB 10.x supports
+-- ADD COLUMN IF NOT EXISTS; each line is a no-op if the column already exists.
+-- ---------------------------------------------------------------------------
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS astro_type      VARCHAR(32) NULL AFTER debris;
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS area            INT NULL AFTER astro_type;
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS solar_energy    INT NULL AFTER area;
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS fertility       INT NULL AFTER solar_energy;
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS metal           INT NULL AFTER fertility;
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS gas             INT NULL AFTER metal;
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS crystals        INT NULL AFTER gas;
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS recorded_days_ago VARCHAR(16) NULL AFTER crystals;
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS defenses TEXT NULL AFTER recorded_days_ago;

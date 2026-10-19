@@ -287,41 +287,60 @@ def _fan_out(item, servid, user_id):
 
     try:
         if mode == "base":
-            db.upsert(
-                "bases",
-                {"servid", "coords"},
-                {
-                    "servid": servid,
-                    "user_id": sending_id,
-                    "coords": req.get("coords"),
-                    "base_id": _num(req.get("base_id")),
-                    "base_name": req.get("base_name"),
-                    "owner_id": _num(req.get("owner_id")),
-                    "owner_name": req.get("ownerName"),
-                    "owner_level": _num(req.get("ownerLevel")),
-                    "owner_guild_tag": req.get("ownerGuildTag"),
-                    "occupier_id": _num(req.get("occupier_id")),
-                    "occupier_name": req.get("occupierName"),
-                    "occupier_level": _num(req.get("occLevel")),
-                    "occupier_guild_tag": req.get("occGuildTag"),
-                    "terrain": req.get("terrain"),
-                    "debris": _num(req.get("debris")),
-                    "structures": req.get("structures"),
-                    "structure_levels": req.get("structure_levels"),
-                    "construction": req.get("construction"),
-                    "production": req.get("production"),
-                    "research": req.get("research"),
-                    "max_econ": req.get("max_econ"),
-                    "current_econ": req.get("current_econ"),
-                    "trade": req.get("trade"),
-                    "last_pillaged": req.get("last_pillaged"),
-                    "stability": req.get("uc_stability"),
-                    "wormhole": req.get("wormHole"),
-                    "commander": req.get("commander"),
-                    "universe_id": req.get("universeId"),
-                    "jumpgate": _num(req.get("jumpgate")),
-                },
-            )
+            # Only update columns whose request key is PRESENT in this upload.
+            #
+            # "Update only what is there" (per-project invariant): a recorded/
+            # scout capture omits live-only fields (construction, production,
+            # research, ...), so those columns must keep their existing value
+            # rather than be blanked by a NULL. A key that IS present but empty
+            # (e.g. the parser observed a structure/aura removed) still writes
+            # through, because only the OWNING parser writes that key — see
+            # ParseRecordedBase in the extension, which sends ONLY the fields it
+            # can see. servid/user_id/coords are always present (coords is the
+            # unique key).
+            base_cols = [
+                ("base_id", "base_id", _num),
+                ("base_name", "base_name", None),
+                ("owner_id", "owner_id", _num),
+                ("owner_name", "ownerName", None),
+                ("owner_level", "ownerLevel", _num),
+                ("owner_guild_tag", "ownerGuildTag", None),
+                ("occupier_id", "occupier_id", _num),
+                ("occupier_name", "occupierName", None),
+                ("occupier_level", "occLevel", _num),
+                ("occupier_guild_tag", "occGuildTag", None),
+                ("terrain", "terrain", None),
+                ("debris", "debris", _num),
+                ("astro_type", "astro_type", None),
+                ("area", "area", _num),
+                ("solar_energy", "solar_energy", _num),
+                ("fertility", "fertility", _num),
+                ("metal", "metal", _num),
+                ("gas", "gas", _num),
+                ("crystals", "crystals", _num),
+                ("recorded_days_ago", "recorded_days_ago", None),
+                ("defenses", "defenses", None),
+                ("structures", "structures", None),
+                ("structure_levels", "structure_levels", None),
+                ("construction", "construction", None),
+                ("production", "production", None),
+                ("research", "research", None),
+                ("max_econ", "max_econ", None),
+                ("current_econ", "current_econ", None),
+                ("trade", "trade", None),
+                ("last_pillaged", "last_pillaged", None),
+                ("stability", "uc_stability", None),
+                ("wormhole", "wormHole", None),
+                ("commander", "commander", None),
+                ("universe_id", "universeId", None),
+                ("jumpgate", "jumpgate", _num),
+            ]
+            data = {"servid": servid, "user_id": sending_id, "coords": req.get("coords")}
+            for col, key, coerce in base_cols:
+                if key in req:
+                    v = req.get(key)
+                    data[col] = coerce(v) if coerce else v
+            db.upsert("bases", {"servid", "coords"}, data)
 
         elif mode == "astro":
             db.upsert(

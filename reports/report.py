@@ -77,6 +77,51 @@ def report_bases():
         print(f"| {server} | {coords} | {name} | {owner} | {terrain} | {econ} | {prod} | {con} | {res} | {structures} |")
 
 
+def report_recorded_bases():
+    """Scout/recorded bases: astro attributes + defenses + staleness.
+
+    These rows come from ParseRecordedBase (autoscout "Recorded data from N ago"
+    pages) and carry the astro attributes (area/solar/fertility/resources) and
+    defenses that live-eyes captures don't fill.
+    """
+    rows = db.query(
+        """
+        SELECT s.server_name AS server, b.coords, b.base_name, b.owner_name,
+               b.astro_type, b.terrain, b.area, b.solar_energy, b.fertility,
+               b.metal, b.gas, b.crystals, b.defenses, b.recorded_days_ago,
+               b.structures, b.structure_levels
+          FROM bases b
+          LEFT JOIN servers s ON s.servid = b.servid
+         WHERE b.recorded_days_ago IS NOT NULL
+            OR b.area IS NOT NULL
+            OR b.defenses IS NOT NULL
+         ORDER BY s.server_name, b.coords
+        """
+    )
+    if not rows:
+        print("No recorded/scout bases captured yet.")
+        return
+
+    print(f"**Recorded/Scout Bases: {len(rows)}**\n")
+    print("| Server | Coords | Base | Owner | Astro | Terrain | Area | Solar | Fert | M/G/C | Defenses | Age | Structures |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    for r in rows:
+        server = r["server"] or "?"
+        coords = r["coords"] or "?"
+        name = r["base_name"] or "—"
+        owner = r["owner_name"] or "—"
+        astro = r["astro_type"] or "—"
+        terrain = r["terrain"] or "—"
+        area = r["area"] if r["area"] is not None else "—"
+        solar = r["solar_energy"] if r["solar_energy"] is not None else "—"
+        fert = r["fertility"] if r["fertility"] is not None else "—"
+        mgc = f"{r['metal'] or '—'}/{r['gas'] or '—'}/{r['crystals'] or '—'}"
+        defenses = (r["defenses"] or "—").replace("*", ", ")
+        age = r["recorded_days_ago"] or "—"
+        structures = fmt_structures(r["structures"], r["structure_levels"])
+        print(f"| {server} | {coords} | {name} | {owner} | {astro} | {terrain} | {area} | {solar} | {fert} | {mgc} | {defenses} | {age} | {structures} |")
+
+
 def _json(s):
     """Parse a JSON column (pymysql returns it as a string) into a dict/list.
 
@@ -475,6 +520,7 @@ def report_error_log():
 
 REPORTS = {
     "bases": report_bases,
+    "recorded_bases": report_recorded_bases,
     "servers": report_servers,
     "astros": report_astros,
     "systems": report_systems,

@@ -69,6 +69,7 @@ Query captured data without touching the bridge HTTP API — `reports/report.py`
 reuses `bridge/db.py` (auto-reads `bridge/.env`) and prints Markdown:
 ```bash
 bridge/.venv/bin/python reports/report.py bases   # every base + structure levels
+bridge/.venv/bin/python reports/report.py recorded_bases  # scout/recorded bases: astro attrs + defenses + staleness
 ```
 - Use the **bridge venv python** (`bridge/.venv/bin/python`) — the system python
   has no `pymysql`.
@@ -153,6 +154,21 @@ Every element is ALSO logged verbatim to `capture_events` (lossless fallback).
   server uses to catch bots/scripts. Never parsed, stored, or referred to at any
   layer. Dropped in BOTH `extension/content/parse.js` (never collected) and
   `bridge/app.py` (hard `continue` before `_fan_out`/`capture_events`).
+- **Update only what's present — never blank a column a parser didn't send.**
+  The bridge `base` handler builds its upsert from the request keys that are
+  PRESENT, not from a fixed column list. A recorded/scout capture omits
+  live-only fields (construction/production/research/economy), so those keep
+  their existing value; a key that IS present but empty (parser observed a
+  removal) still writes through. Each parser sends ONLY the fields it owns:
+  `ParseRecordedBase` sends astro attributes + defenses + staleness, never the
+  live-only economy rows. Keep this present-key-only rule for any new mode.
+- **Recorded/scout base pages are captured, not skipped.** `ParseBase` detects
+  `Recorded data from` (against the live DOM for manual view, the fetched
+  fragment for autoscout) and delegates to `ParseRecordedBase`, which stores
+  astro_type/area/solar_energy/fertility/metal/gas/crystals/defenses/
+  recorded_days_ago in `bases`. These columns were added via idempotent
+  `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` at the end of `bridge/schema.sql`
+  (a fresh `CREATE TABLE IF NOT EXISTS` won't upgrade an existing DB).
 - **Never write to the game DOM while a spy script is present.** The server
   randomly injects spy scripts (markers `js_jquery_debug` and `debug.aspx` in
   fetched HTML) that copy the DOM and post it back to catch page-modifying
