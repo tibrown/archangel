@@ -846,10 +846,8 @@ var ct = {
         case "report":
           // report.aspx?view=galaxy is a seed list of player/base/location rows.
           // The recursive galaxy scan (systems -> astros -> bases -> profiles) is
-          // started manually via an on-page "Scan Galaxy" button, not on page load.
-          if (search.match(/view=galaxy/) != null) {
-            pageUI.InjectGalaxyScanButton();
-          }
+          // started manually from the sidebar "Scan Galaxy Report" button; it is
+          // NOT auto-triggered on page load and nothing is injected into the AE page.
           break;
         case "account":
           ctF.CheckConfig();

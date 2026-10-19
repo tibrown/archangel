@@ -258,6 +258,8 @@ var DPanel = function() {
             }
           });
         }
+      } else if (args.page == 'report') {
+        $('#divReport').show();
       } else if (args.page == 'profile') {
         $('#divProfile').show();
         var m = args.search.match(/=(\d+)/);
