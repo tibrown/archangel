@@ -150,6 +150,12 @@ function bindEvents() {
   $("pg-next").addEventListener("click", () => {
     if ((state.page + 1) * state.limit < state.total) { state.page++; loadRows(); }
   });
+  $("pg-size").addEventListener("change", (e) => {
+    state.limit = parseInt(e.target.value, 10) || 100;
+    $("pg-size").value = String(state.limit);
+    state.page = 0;
+    loadRows();
+  });
   $("modal-close").addEventListener("click", closeModal);
   $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
 }
