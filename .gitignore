@@ -4,3 +4,7 @@ __pycache__/
 bridge/.venv/
 .env
 .extracted/
+
+# local-only agent docs (never commit)
+AGENTS.md
+.hermes/
