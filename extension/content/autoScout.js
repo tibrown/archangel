@@ -555,9 +555,12 @@ var AutoScouter = function() {
     }
   }
 
-  // Shared driver: take parsed galaxy-report rows, dedupe locations into a
-  // system list, scan each system (recursing into astros + bases), then scan
-  // the unique players' profiles.
+  // Shared driver: take parsed galaxy-report rows and scan them ONE ROW AT A
+  // TIME. For each row we scan: (1) the player's profile, then (2) the base +
+  // location/system (System() recurses into astros -> bases -> ParseBase/
+  // recorded), and only then move to the next row. Players and systems are
+  // deduped across the run so shared owners / co-located bases aren't scanned
+  // repeatedly, but ordering is strictly row-sequential.
   this.ScanGalaxyRows = function(rows, callback) {
     try {
       aScout.log('ScanGalaxyRows: ' + (rows ? rows.length : 0) + ' base rows');
@@ -567,39 +570,52 @@ var AutoScouter = function() {
         econs.CallBack(callback, 'no rows');
         return;
       }
-      // dedupe locations into a system list (drop the astro slot)
-      var seen = {};
-      var systems = [];
-      var players = [];
+      var seenSystems = {};
       var seenPlayers = {};
-      $.each(rows, function(i, r) {
-        var sys = safeMatch(r.location, /([A-Z]\d\d:\d\d:\d\d)/, [1]);
-        if (sys && !seen[sys]) {
-          seen[sys] = true;
-          systems.push({ coords: sys });
-        }
-        if (r.playerId && !seenPlayers[r.playerId]) {
-          seenPlayers[r.playerId] = true;
-          players.push({ playerId: r.playerId, nick: r.playerName });
-        }
-      });
-      aScout.log('ScanGalaxyRows: ' + systems.length + ' unique systems, ' + players.length + ' unique players');
-      ctF.DisplayStatus('Scanning ' + systems.length + ' systems from galaxy report');
-      aScout.GuildSystems = systems;
-      cnt = 0;
-      aScout.IterateSystems(function() {
-        ctF.DisplayStatus('Galaxy report systems done; scanning ' + players.length + ' player profiles');
-        profileScanQueue = players;
-        aScout.IterateProfiles(function() {
+      var cur = 0;
+
+      var processRow = function() {
+        if (cur >= rows.length) {
           aScout.GalaxyScanActive = false;
-          ctF.DisplayStatus('Galaxy report scan complete');
+          ctF.DisplayStatus('Galaxy report scan complete (' + rows.length + ' rows)');
           econs.CallBack(callback, 'done');
+          return;
+        }
+        var r = rows[cur];
+        cur++;
+        var sys = safeMatch(r.location, /([A-Z]\d\d:\d\d:\d\d)/, [1]);
+        ctF.DisplayStatus('Galaxy row ' + cur + '/' + rows.length + ': ' + (r.playerName || '') + ' @ ' + r.location);
+
+        // step 1: player profile (deduped across rows)
+        var scanPlayer = function(next) {
+          if (r.playerId && !seenPlayers[r.playerId]) {
+            seenPlayers[r.playerId] = true;
+            aScout.log('ScanGalaxyRows row ' + cur + ': scanning player ' + r.playerId + ' (' + r.playerName + ')');
+            ctF.DisplayStatus('Scanning player ' + (r.playerName || r.playerId) + ' (' + r.playerId + ')');
+            aScout.Profile(r.playerId, function() { next(); });
+          } else {
+            next();
+          }
+        };
+        // step 2: base + location/system (deduped across rows)
+        scanPlayer(function() {
+          if (sys && !seenSystems[sys]) {
+            seenSystems[sys] = true;
+            aScout.log('ScanGalaxyRows row ' + cur + ': scanning system ' + sys);
+            ctF.DisplayStatus('Scanning system ' + sys + ' (row ' + cur + ')');
+            aScout.System(sys, function() { processRow(); });
+          } else {
+            processRow();
+          }
         });
-      });
+      };
+
+      processRow();
     } catch (e) {
       lg.debug(e, 'Error in ScanGalaxyRows:', {
         stack: true
       });
+      aScout.GalaxyScanActive = false;
       econs.CallBack(callback, 'error');
     }
   }
