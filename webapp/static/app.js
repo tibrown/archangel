@@ -796,8 +796,21 @@ function baseKey(row) {
   return `${row.servid}|${row.coords}`;
 }
 
+// Decode the parallel '*' separated structures/levels strings into pairs.
+// e.g. "Urban Structures*Gas Plants" + "19*11" -> [["Urban Structures","19"],...]
+function decodeStarPairs(names, levels) {
+  const ns = (names || "").split("*").map(s => s.trim()).filter(Boolean);
+  const ls = (levels || "").split("*").map(s => s.trim());
+  return ns.map((n, i) => [n, ls[i] || "—"]);
+}
+
+// Decode the '*' separated defenses strings ("Name count") into pairs.
+function decodeDefenses(defenses) {
+  return (defenses || "").split("*").map(s => s.trim()).filter(Boolean);
+}
+
 // Renders a labelled two-column detail grid for one base, with a prominent
-// JG (Jump Gate) row. Uses only fields already present on the row.
+// JG (Jump Gate) row, plus full structures and defenses breakdowns.
 function renderBaseDetails(row) {
   const tr = document.createElement("tr");
   tr.className = "base-detail-row";
@@ -825,7 +838,13 @@ function renderBaseDetails(row) {
   grid.appendChild(ppRow("Occupier", [row.occupier_name, `(${row.occupier_id})`].filter(Boolean).join(" ") || "—"));
   grid.appendChild(ppRow("Occupier Guild", row.occupier_guild_tag || "—"));
   grid.appendChild(ppRow("Occupier Level", row.occupier_level ?? "—"));
+  grid.appendChild(ppRow("Astro Type", row.astro_type || "—"));
   grid.appendChild(ppRow("Terrain", row.terrain));
+  grid.appendChild(ppRow("Area", row.area ?? "—"));
+  grid.appendChild(ppRow("Solar Energy", row.solar_energy ?? "—"));
+  grid.appendChild(ppRow("Fertility", row.fertility ?? "—"));
+  grid.appendChild(ppRow("Resources (M/G/C)", [row.metal, row.gas, row.crystals].map(v => v ?? "—").join(" / ")));
+  grid.appendChild(ppRow("Recorded Age", row.recorded_days_ago || "—"));
   grid.appendChild(ppRow("Wormhole", row.wormhole));
   grid.appendChild(ppRow("Commander", row.commander || "—"));
   grid.appendChild(ppRow("Stability", row.stability || "—"));
@@ -835,8 +854,37 @@ function renderBaseDetails(row) {
   grid.appendChild(ppRow("Max Econ", row.max_econ));
   grid.appendChild(ppRow("Current Econ", row.current_econ));
   grid.appendChild(ppRow("Debris", row.debris));
+  grid.appendChild(ppRow("Last Pillaged", row.last_pillaged || "—"));
+  grid.appendChild(ppRow("Trade", row.trade || "—"));
 
   wrap.appendChild(grid);
+
+  // Structures breakdown (name -> level).
+  const structPairs = decodeStarPairs(row.structures, row.structure_levels);
+  if (structPairs.length) {
+    const sTitle = document.createElement("div");
+    sTitle.className = "sub-title";
+    sTitle.textContent = "Structures";
+    wrap.appendChild(sTitle);
+    const sGrid = document.createElement("div");
+    sGrid.className = "base-detail-grid base-structures-grid";
+    for (const [name, lvl] of structPairs) sGrid.appendChild(ppRow(name, lvl));
+    wrap.appendChild(sGrid);
+  }
+
+  // Defenses breakdown.
+  const defs = decodeDefenses(row.defenses);
+  if (defs.length) {
+    const dTitle = document.createElement("div");
+    dTitle.className = "sub-title";
+    dTitle.textContent = "Defenses";
+    wrap.appendChild(dTitle);
+    const dGrid = document.createElement("div");
+    dGrid.className = "base-detail-grid base-defenses-grid";
+    for (const d of defs) dGrid.appendChild(ppRow(d, ""));
+    wrap.appendChild(dGrid);
+  }
+
   td.appendChild(wrap);
   tr.appendChild(td);
   return tr;

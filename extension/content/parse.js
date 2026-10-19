@@ -773,11 +773,267 @@ var Parser = function() {
     }
   }
 
+  // Shared astro collection for one system page. Builds the `system` upload
+  // request with nested astro0..astroN entries plus the per-astro owner / occ /
+  // debris / fleet / wormhole parsing. Used by BOTH the live ParseSystem and
+  // the recorded ParseRecordedSystem so the two never drift. Returns the req,
+  // cbData, data_list and the system-level fleet tallies.
+  this.CollectSystemData = function(system, system_table, isFoggy, addFakeEyeData) {
+    var num_astros = 0;
+    var data_list = [];
+    var cbData = [];
+    var req = {
+      request: {
+        mode: 'system',
+        system: system,
+        hasEyes: false,
+        // look for alink _b or span (empty)
+        sendingPlayerId: ctG.SendingPlayerId
+      }
+    };
+    var gtfleetamt = parseInt(0); // guild
+    var stfleetamt = parseInt(0); // self
+    var ntfleetamt = parseInt(0); // neutral
+
+    system_table.find('.astro_asteroid-belt').each(function() {
+      var iA = $(this).parent().get(0);
+      iA.href = '';
+    });
+    system_table.find('.astro_gas-giant').each(function() {
+      var iA = $(this).parent().get(0);
+      iA.href = '';
+    });
+
+    system_table.find('img.astro')
+      .not('.astro_asteroid-belt').not('.astro_gas-giant').each(
+        function() {
+          // gas giants in spanish leak this, this blocks them
+          if (this.src.match(/(Gas%20Giant.jpg|Asteroid%20Belt.jpg)/)) return;
+          if ($(this).css('display') == 'none') return;
+          var imgId = $(this).attr('id');
+          var imgA = $(this).parent();
+
+          var r = $(this).attr('title').match(/(.+) \(([A-Z]\d\d:\d\d:\d\d:\d\d)\)/);
+          if (!r) return;
+          var terrain = r[1];
+          var location = r[2];
+
+          var alinkHref = imgA.attr('href');
+          var isbase = alinkHref.match(/base.aspx/);
+          var baseId = 0;
+          if (isbase) {
+            req.request.hasEyes = true; // redundant
+            baseId = alinkHref.match(/base=([0-9]+)/);
+            if (baseId) baseId = baseId[1];
+          }
+          var starsid = 'astro_icons_' + location;
+          var starsdiv = imgA.parent();
+
+          var arr = $("div[title*='Fleet']", starsdiv);
+          var fleetPresent = false;
+          var gfleetamt = parseInt(0); // guild
+          var sfleetamt = parseInt(0); // self
+          var nfleetamt = parseInt(0); // neutral
+          var present = parseInt(0);
+          var incoming = parseInt(0);
+
+          for (var i = 0; i < arr.length; i++) {
+            var d = $(arr[i]);
+            var pdiv = d.parent().parent();
+            var pid = pdiv.attr('id');
+            if (pid == starsid) {
+              fleetPresent = true;
+              // guild fleet
+              var farr = d.attr('title').match(/Guild:/);
+              if (farr) {
+                farr = d.attr('title').match(/Fleet present: ([0-9,]+)/);
+                present = ctF.ReplaceAll(farr[1], ',', '');
+                farr = d.attr('title').match(/Incoming: ([0-9,]+)/);
+                if (farr) {
+                  incoming = ctF.ReplaceAll(farr[1], ',', '');
+                } else {
+                  incoming = 0;
+                }
+                gfleetamt = parseInt(present) + parseInt(incoming);
+                if (gfleetamt > gtfleetamt) gtfleetamt = gfleetamt;
+              }
+              // self fleet
+              farr = d.attr('title').match(/Self:/);
+              if (farr) {
+                farr = d.attr('title').match(/Fleet present: ([0-9,]+)/);
+                present = ctF.ReplaceAll(farr[1], ',', '');
+                farr = d.attr('title').match(/Incoming: ([0-9,]+)/);
+                if (farr) {
+                  incoming = ctF.ReplaceAll(farr[1], ',', '');
+                } else {
+                  incoming = 0;
+                }
+                sfleetamt = parseInt(present) + parseInt(incoming);
+                if (sfleetamt > stfleetamt) stfleetamt = sfleetamt;
+              }
+              // neutral fleet
+              farr = d.attr('title').match(/Neutral:/);
+              if (farr) {
+                farr = d.attr('title').match(/Fleet present: ([0-9,]+)/);
+                present = ctF.ReplaceAll(farr[1], ',', '');
+                farr = d.attr('title').match(/Incoming: ([0-9,]+)/);
+                if (farr) {
+                  incoming = ctF.ReplaceAll(farr[1], ',', '');
+                } else {
+                  incoming = 0;
+                }
+                nfleetamt = parseInt(present) + parseInt(incoming);
+                if (nfleetamt > ntfleetamt) ntfleetamt = nfleetamt;
+              }
+
+            }
+          }
+          var arr = $("div[title*='Debris']", starsdiv);
+          var debris = 0;
+          for (var i = 0; i < arr.length; i++) {
+            var d = $(arr[i]);
+            var pdiv = d.parent().parent();
+            var pid = pdiv.attr('id');
+            if (pid == starsid) {
+              var title = d.attr('title');
+              if (!title) continue;
+              var dm = title.match(/([0-9,]*) Debris/);
+              if (dm) debris = ctF.ReplaceAll(dm[1], ',', '');
+            }
+          }
+          var plid = location + '_b';
+          var ocid = location + '_c';
+          var span = $('span[id="' + plid + '"]', starsdiv);
+          var Alnk = $('a[id="' + plid + '"]', starsdiv);
+          // empty only means no base notno fleet
+          var empty = (!isbase && !fleetPresent);
+          var eyes = span.length > 0 || Alnk.length > 0;
+          req.request.hasEyes = eyes;
+          // fake eye data
+          if ((!eyes || isFoggy) && addFakeEyeData) {
+            parse.AddDataSdiv(location, this, isFoggy);
+          }
+
+          var arr = $('a[href*="profile.aspx"]', starsdiv);
+          var warr = $('[title="Wormhole"]', starsdiv);
+          var wormhole = 0;
+          if (warr.length) wormhole = 1;
+          var playerId = 0;
+          var playerNick = '';
+          var occPlayerId = 0;
+          var occNick = '';
+          for (var i = 0; i < arr.length; i++) {
+            var d = $(arr[i]);
+            if (d.attr('id') == plid) {
+              var hrf = d.attr('href');
+              playerId = safeMatch(hrf, /\d+/, [0]);
+              playerNick = d.text();
+            }
+            if (d.attr('id') == ocid) {
+              var hrf = d.attr('href');
+              occPlayerId = safeMatch(hrf, /\d+/, [0]);
+              occNick = d.text();
+            }
+          }
+
+          req.request['astro' + num_astros] = {
+            coord: location,
+            empty: empty,
+            terrain: terrain,
+            baseId: baseId,
+            playerId: playerId,
+            wormhole: wormhole,
+            occPlayerId: occPlayerId,
+            debris: debris
+          };
+          cbData.push(req.request['astro' + num_astros]);
+
+          num_astros++;
+
+          // for fleet parse?
+          var data = {
+            coord: location,
+            url: alinkHref,
+            terrain: terrain,
+            base: baseId,
+            player: playerNick,
+            occ: occNick,
+            debris: debris,
+            sendingPlayerId: ctG.SendingPlayerId
+          };
+          if (fleetPresent || baseId > 0) data_list.push(data);
+
+        });
+
+    return {
+      req: req,
+      cbData: cbData,
+      data_list: data_list,
+      num_astros: num_astros,
+      gtfleetamt: gtfleetamt,
+      stfleetamt: stfleetamt,
+      ntfleetamt: ntfleetamt
+    };
+  }
+
+  // Parse a recorded/scout system page ("Recorded data from N ago"). Unlike a
+  // live system these pages ARE captured: every astro's terrain, owner, occ,
+  // base, debris, fleet and wormhole are still present in the DOM, so we run
+  // the same CollectSystemData loop and always upload — the live parse skips
+  // foggy pages, but the scout data is valuable. Sends ONLY this parser's
+  // fields (the system + its astros) via the standard 'system' mode.
+  this.ParseRecordedSystem = function(msg, callback) {
+    try {
+      parse.log('Parsing Recorded System');
+      var didUpload = false;
+      var system, system_table, addFakeEyeData = false;
+      if (msg == null) {
+        var s = $('a:contains(Galaxy):first').parents('center');
+        var sm = s.text().match(/[A-Z]\d\d:\d\d:\d\d/);
+        system = (sm) ? sm[0] : '';
+        system_table = $('table.system');
+      } else {
+        if (parse.BadDoc(msg, 'ParseRecordedSystem')) { econs.CallBack(callback, []); return; }
+        var obj = $('<div>').append($(msg));
+        var sm = obj.find('center').html().match(/[A-Z]\d\d:\d\d:\d\d/);
+        system = (sm) ? sm[0] : '';
+        system_table = obj.find('table.system');
+      }
+      if (!system || system_table.length != 1) {
+        econs.CallBack(callback, []);
+        return;
+      }
+      var c = parse.CollectSystemData(system, system_table, true, addFakeEyeData);
+      ctF.DisplayStatus('Parsed recorded system ' + system + ', submitting ' + c.num_astros + ' astros');
+      ctF.PushUpload(c.req);
+      didUpload = true;
+      econs.CallBack(callback, c.cbData);
+    } catch (e) {
+      lg.debug(e, 'Error in ParseRecordedSystem:', {
+        stack: true
+      });
+      econs.CallBack(callback, []);
+    }
+  }
+
   this.ParseSystem = function(msg, callback) {
     try {
       var addFakeEyeData = false;
-      var isFoggy = $('center:contains(Recorded data from)').length > 0;
-      if (isFoggy) parse.log('Is FOGGY');
+      // Recorded/scout system pages carry "<center>Recorded data from N ago."
+      // Detect against whatever source we're parsing (live DOM for manual view,
+      // fetched fragment for autoscout), then hand off to the scout parser so
+      // the astros are still captured — mirrors ParseBase -> ParseRecordedBase.
+      var isFoggy = false;
+      if (msg == null) {
+        isFoggy = $('center:contains(Recorded data from)').length > 0;
+      } else {
+        isFoggy = $(msg).filter('center:contains(Recorded data from)').length > 0
+          || $('<div>').append($(msg)).find('center:contains(Recorded data from)').length > 0;
+      }
+      if (isFoggy) {
+        parse.log('Is FOGGY -> recorded system, delegating to ParseRecordedSystem');
+        return parse.ParseRecordedSystem(msg, callback);
+      }
       if (msg == null) {
         addFakeEyeData = true;
         var s = $('a:contains(Galaxy):first').parents('center');
@@ -798,205 +1054,15 @@ var Parser = function() {
       }
       if (system_table.length != 1) return;
 
-      var index = 0;
-      var num_astros = 0;
-      var data_list = [];
-      var cbData = [];
       var visible_system = true;
-      var req = {
-        request: {
-          mode: 'system',
-          system: system,
-          hasEyes: false,
-          // look for alink _b or span (empty)
-          sendingPlayerId: ctG.SendingPlayerId
-        }
-      };
-
-      /*
-       * find img tags check if vis get parent alink if alink is for a
-       * base alink.id=loc_b is player alink else astro astro_icons id =
-       * astro_icons_LOC
-       */
-
-      var gtfleetamt = parseInt(0); // guild
-      var stfleetamt = parseInt(0); // self
-      var ntfleetamt = parseInt(0); // neutral
-
-      system_table.find('.astro_asteroid-belt').each(function() {
-        var iA = $(this).parent().get(0);
-        iA.href = '';
-      });
-
-      system_table.find('.astro_gas-giant').each(function() {
-        var iA = $(this).parent().get(0);
-        iA.href = '';
-      });
-
-      var imgs = system_table.find('img.astro')
-        .not('.astro_asteroid-belt').not('.astro_gas-giant').each(
-          function() {
-            // gas giants in spanish leak this, this blocks them
-            if (this.src.match(/(Gas%20Giant.jpg|Asteroid%20Belt.jpg)/)) return;
-            if ($(this).css('display') == 'none') return;
-            var imgId = $(this).attr('id');
-            var imgA = $(this).parent();
-
-            var r = $(this).attr('title').match(/(.+) \(([A-Z]\d\d:\d\d:\d\d:\d\d)\)/);
-            var terrain = r[1];
-            var location = r[2];
-
-            var alinkHref = imgA.attr('href');
-            var isbase = alinkHref.match(/base.aspx/);
-            var baseId = 0;
-            if (isbase) {
-              req.request.hasEyes = true; // redundant
-              baseId = alinkHref.match(/base=([0-9]+)/);
-              if (baseId) baseId = baseId[1];
-            }
-            var starsid = 'astro_icons_' + location;
-            var starsdiv = imgA.parent();
-
-            var arr = $("div[title*='Fleet']", starsdiv);
-            var fleetPresent = false;
-            var gfleetamt = parseInt(0); // guild
-            var sfleetamt = parseInt(0); // self
-            var nfleetamt = parseInt(0); // neutral
-            var present = parseInt(0);
-            var incoming = parseInt(0);
-
-            for (var i = 0; i < arr.length; i++) {
-              var d = $(arr[i]);
-              var pdiv = d.parent().parent();
-              var pid = pdiv.attr('id');
-              if (pid == starsid) {
-                fleetPresent = true;
-                // guild fleet
-                var farr = d.attr('title').match(/Guild:/);
-                if (farr) {
-                  farr = d.attr('title').match(/Fleet present: ([0-9,]+)/);
-                  present = ctF.ReplaceAll(farr[1], ',', '');
-                  farr = d.attr('title').match(/Incoming: ([0-9,]+)/);
-                  if (farr) {
-                    incoming = ctF.ReplaceAll(farr[1], ',', '');
-                  } else {
-                    incoming = 0;
-                  }
-                  gfleetamt = parseInt(present) + parseInt(incoming);
-                  if (gfleetamt > gtfleetamt) gtfleetamt = gfleetamt;
-                }
-                // self fleet
-                farr = d.attr('title').match(/Self:/);
-                if (farr) {
-                  farr = d.attr('title').match(/Fleet present: ([0-9,]+)/);
-                  present = ctF.ReplaceAll(farr[1], ',', '');
-                  farr = d.attr('title').match(/Incoming: ([0-9,]+)/);
-                  if (farr) {
-                    incoming = ctF.ReplaceAll(farr[1], ',', '');
-                  } else {
-                    incoming = 0;
-                  }
-                  sfleetamt = parseInt(present) + parseInt(incoming);
-                  if (sfleetamt > stfleetamt) stfleetamt = sfleetamt;
-                }
-                // neutral fleet
-                farr = d.attr('title').match(/Neutral:/);
-                if (farr) {
-                  farr = d.attr('title').match(/Fleet present: ([0-9,]+)/);
-                  present = ctF.ReplaceAll(farr[1], ',', '');
-                  farr = d.attr('title').match(/Incoming: ([0-9,]+)/);
-                  if (farr) {
-                    incoming = ctF.ReplaceAll(farr[1], ',', '');
-                  } else {
-                    incoming = 0;
-                  }
-                  nfleetamt = parseInt(present) + parseInt(incoming);
-                  if (nfleetamt > ntfleetamt) ntfleetamt = nfleetamt;
-                }
-
-              }
-            }
-            var arr = $("div[title*='Debris']", starsdiv);
-            for (var i = 0; i < arr.length; i++) {
-              var d = $(arr[i]);
-              var pdiv = d.parent().parent();
-              var pid = pdiv.attr('id');
-              if (pid == starsid) {
-                var title = d.attr('title');
-                var debris = title.match(/([0-9,]*) Debris/);
-                if (debris) {
-                  debris = debris[1];
-                  debris = ctF.ReplaceAll(debris, ',', '');
-                }
-
-              }
-            }
-            var plid = location + '_b';
-            var ocid = location + '_c';
-            var span = $('span[id="' + plid + '"]', starsdiv);
-            var Alnk = $('a[id="' + plid + '"]', starsdiv);
-            // empty only means no base notno fleet
-            var empty = (!isbase && !fleetPresent);
-            var eyes = span.length > 0 || Alnk.length > 0;
-            req.request.hasEyes = eyes;
-            // fake eye data
-            if ((!eyes || isFoggy) && addFakeEyeData) {
-              // $(this).parent().parent().append(dv);
-              parse.AddDataSdiv(location, this, isFoggy);
-            }
-
-            var arr = $('a[href*="profile.aspx"]', starsdiv);
-            var warr = $('[title="Wormhole"]', starsdiv);
-            var wormhole = 0;
-            if (warr.length) wormhole = 1;
-            var playerId = 0;
-            var playerNick = '';
-            var occPlayerId = 0;
-            var occNick = '';
-            for (var i = 0; i < arr.length; i++) {
-              var d = $(arr[i]);
-              if (d.attr('id') == plid) {
-                // found base owner
-                var hrf = d.attr('href');
-                playerId = safeMatch(hrf, /\d+/, [0]);
-                playerNick = d.text();
-              }
-              if (d.attr('id') == ocid) {
-                // found occ player
-                var hrf = d.attr('href');
-                occPlayerId = safeMatch(hrf, /\d+/, [0]);
-                occNick = d.text();
-              }
-            }
-
-            req.request['astro' + num_astros] = {
-              coord: location,
-              empty: empty,
-              terrain: terrain,
-              baseId: baseId,
-              playerId: playerId,
-              wormhole: wormhole,
-              occPlayerId: occPlayerId,
-              debris: debris
-            };
-            cbData.push(req.request['astro' + num_astros]);
-
-            num_astros++;
-
-            // for fleet parse?
-            var data = {
-              coord: location,
-              url: alinkHref,
-              terrain: terrain,
-              base: baseId,
-              player: playerNick,
-              occ: occNick,
-              debris: debris,
-              sendingPlayerId: ctG.SendingPlayerId
-            };
-            if (fleetPresent || baseId > 0) data_list.push(data);
-
-          });
+      var c = parse.CollectSystemData(system, system_table, isFoggy, addFakeEyeData);
+      var req = c.req;
+      var cbData = c.cbData;
+      var data_list = c.data_list;
+      var num_astros = c.num_astros;
+      var gtfleetamt = c.gtfleetamt;
+      var stfleetamt = c.stfleetamt;
+      var ntfleetamt = c.ntfleetamt;
 
       if (visible_system && !isFoggy) {
         //if (typeof parse.SystemDataFunction == 'function') parse.SystemDataFunction(system, data_list);

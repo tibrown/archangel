@@ -291,3 +291,5 @@ input[type="search"], select {
 .base-detail-grid .pp-key { color: var(--muted); text-align: right; }
 .base-detail-grid .pp-val { font-weight: 600; }
 .base-detail-grid .pp-row.pp-highlight .pp-val { color: var(--accent); font-weight: 800; font-size: 14px; }
+.base-detail .sub-title + .base-detail-grid { margin-top: 2px; }
+.base-structures-grid, .base-defenses-grid { max-width: 420px; margin-bottom: 10px; }
