@@ -514,8 +514,19 @@ var AutoScouter = function() {
   // system pipeline (System -> ParseSystem/recorded -> IterateAstros -> Astro
   // -> ParseBase/recorded) so each system's astros AND bases are captured.
   // After the systems, we scan the unique players' profiles too.
+  // Re-entry guard: PublicParsePage fires on every sidebar/HandShake/upload
+  // message, and each fire would restart ScanGalaxyRows -> a full re-scan of
+  // every system + player. Only one galaxy scan runs at a time; re-triggers are
+  // dropped (the running scan already covers them).
+  this.GalaxyScanActive = false;
+
   this.ScanGalaxyReport = function(callback) {
     try {
+      if (aScout.GalaxyScanActive === true) {
+        aScout.log('ScanGalaxyReport: scan already active, skipping re-trigger');
+        return;
+      }
+      aScout.GalaxyScanActive = true;
       aScout.log('Starting Galaxy Report scan');
       // Parse the rows from the LIVE page when we're already on the galaxy
       // report (that DOM already carries the selected galaxy, which a bare
@@ -552,6 +563,7 @@ var AutoScouter = function() {
       aScout.log('ScanGalaxyRows: ' + (rows ? rows.length : 0) + ' base rows');
       if (!rows || rows.length == 0) {
         ctF.DisplayStatus('Galaxy report: no rows found');
+        aScout.GalaxyScanActive = false;
         econs.CallBack(callback, 'no rows');
         return;
       }
@@ -579,6 +591,7 @@ var AutoScouter = function() {
         ctF.DisplayStatus('Galaxy report systems done; scanning ' + players.length + ' player profiles');
         profileScanQueue = players;
         aScout.IterateProfiles(function() {
+          aScout.GalaxyScanActive = false;
           ctF.DisplayStatus('Galaxy report scan complete');
           econs.CallBack(callback, 'done');
         });
