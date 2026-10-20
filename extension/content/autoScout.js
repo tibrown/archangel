@@ -520,7 +520,18 @@ var AutoScouter = function() {
   // dropped (the running scan already covers them).
   this.GalaxyScanActive = false;
 
-  this.ScanGalaxyReport = function(callback) {
+  this.ScanGalaxyReport = function(callback, limit) {
+    // Optional row cap from the sidebar 'Scan Limit' dropdown (10/20/all).
+    // 'all' or missing -> no cap. Applied before ScanGalaxyRows so only
+    // the first `limit` report rows are scanned (report order).
+    var capRows = function(rows) {
+      var galLimit = parseInt(limit, 10);
+      if (!isNaN(galLimit) && galLimit > 0 && rows && rows.length > galLimit) {
+        aScout.log('ScanGalaxyReport: limiting scan to ' + galLimit + ' of ' + rows.length + ' rows');
+        return rows.slice(0, galLimit);
+      }
+      return rows;
+    };
     try {
       if (aScout.GalaxyScanActive === true) {
         aScout.log('ScanGalaxyReport: scan already active, skipping re-trigger');
@@ -537,14 +548,14 @@ var AutoScouter = function() {
       if (useLive) {
         aScout.log('ScanGalaxyReport: parsing rows from live report page');
         parse.ParseGalaxyReport(null, function(rows) {
-          aScout.ScanGalaxyRows(rows, callback);
+          aScout.ScanGalaxyRows(capRows(rows), callback);
         });
         return;
       }
       ctF.DisplayStatus('Fetching galaxy report...');
       aScout.GetAE('report.aspx?view=galaxy', function(page) {
         parse.ParseGalaxyReport(page, function(rows) {
-          aScout.ScanGalaxyRows(rows, callback);
+          aScout.ScanGalaxyRows(capRows(rows), callback);
         });
       });
     } catch (e) {

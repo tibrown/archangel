@@ -18,7 +18,11 @@ $(document).ready(function() {
       if (menuItem == 'GetRoute') {
         $('#RouteDetails').html('<tr><th>Working</th></tr>');
       }
-      dp.SendMenuSelected(menuItem);
+      if (menuItem == 'ScanGalaxyReport') {
+        dp.SendMenuSelected(menuItem, { ReportLimit: $('#galRepLimit').val() });
+      } else {
+        dp.SendMenuSelected(menuItem);
+      }
     });
 
     $('#DisperseScouts').click(function(e) {

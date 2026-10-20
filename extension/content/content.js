@@ -142,7 +142,7 @@ chrome.runtime.onMessage.addListener(function(msg) {
       }
 
       if (msg.action == "ScanGalaxyReport") {
-        aScout.ScanGalaxyReport(ctF.FlushUpload);
+        aScout.ScanGalaxyReport(ctF.FlushUpload, msg.actionArgs.ReportLimit);
         return;
       }
 
@@ -321,7 +321,7 @@ chrome.runtime.onMessage.addListener(function(msg) {
               aScout.BaseRegions(ctF.FlushUpload);
               break;
             case "ScanGalaxyReport":
-              aScout.ScanGalaxyReport(ctF.FlushUpload);
+              aScout.ScanGalaxyReport(ctF.FlushUpload, msg.actionArgs.ReportLimit);
               break;
             case "ClosestGate":
               gates.GetClosest();

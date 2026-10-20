@@ -77,13 +77,17 @@ var DPanel = function() {
 
   this.DisplayStatus = DisplayStatus;
 
-  this.SendMenuSelected = function(menuItem) {
+  this.SendMenuSelected = function(menuItem, extra) {
     try {
-      var msg = new Message('content', 'NotifyActiveTab', {
+      var actionArgs = {
         actionType: 'MenuItemSelected',
         menuItem: menuItem,
         dTabData: this.ActiveTab
-      });
+      };
+      if (extra) {
+        for (var k in extra) actionArgs[k] = extra[k];
+      }
+      var msg = new Message('content', 'NotifyActiveTab', actionArgs);
       chrome.tabs.sendMessage(dp.ActiveTab.TabId, msg);
       lg.log('********************  MENU ITEM:' + msg.actionArgs.menuItem);
     } catch (e) {
