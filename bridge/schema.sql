@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS bases (
   last_pillaged  VARCHAR(32) NULL,
   stability      VARCHAR(32) NULL,
   wormhole       VARCHAR(16) NULL,
+  has_wormhole   TINYINT NULL,
   commander      VARCHAR(64) NULL,
   universe_id    CHAR(1) NULL,
   jumpgate       INT NULL,
@@ -86,6 +87,7 @@ CREATE TABLE IF NOT EXISTS astros (
   terrain        VARCHAR(32) NULL,
   debris         BIGINT NULL,
   wormhole       VARCHAR(16) NULL,
+  has_wormhole   TINYINT NULL,
   has_eyes       TINYINT NULL,
   universe_id    CHAR(1) NULL,
   scanned_at     TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3),
@@ -265,3 +267,5 @@ ALTER TABLE bases ADD COLUMN IF NOT EXISTS gas             INT NULL AFTER metal;
 ALTER TABLE bases ADD COLUMN IF NOT EXISTS crystals        INT NULL AFTER gas;
 ALTER TABLE bases ADD COLUMN IF NOT EXISTS recorded_days_ago VARCHAR(16) NULL AFTER crystals;
 ALTER TABLE bases ADD COLUMN IF NOT EXISTS defenses TEXT NULL AFTER recorded_days_ago;
+ALTER TABLE bases ADD COLUMN IF NOT EXISTS has_wormhole TINYINT NULL AFTER wormhole;
+ALTER TABLE astros ADD COLUMN IF NOT EXISTS has_wormhole TINYINT NULL AFTER wormhole;
