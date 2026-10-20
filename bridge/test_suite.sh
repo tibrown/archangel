@@ -111,6 +111,15 @@ note "3. dataupload: astro"
 upload '[{"request":{"mode":"astro","coord":"A00:00:00:01","baseId":0,"terrain":"Metalic","debris":"0","hasEyes":true,"sendingPlayerId":4242}}]' >/dev/null
 N=$($DB "SELECT COUNT(*) FROM astros WHERE coord='A00:00:00:01'")
 check "astros row count" 1 "$N"
+WH=$($DB "SELECT COALESCE(has_wormhole,-9) FROM astros WHERE coord='A00:00:00:01'")
+check "astro has_wormhole defaults 0 when absent" 0 "$WH"
+
+note "3b. astro wormhole presence captured"
+upload '[{"request":{"mode":"astro","coord":"A00:00:00:01","baseId":0,"terrain":"Metalic","debris":"0","hasEyes":true,"wormHole":0,"hasWormhole":1,"sendingPlayerId":4242}}]' >/dev/null
+WH=$($DB "SELECT has_wormhole FROM astros WHERE coord='A00:00:00:01'")
+check "astro has_wormhole=1 when wormhole present" 1 "$WH"
+DBASE=$($DB "SELECT COALESCE(wormhole,0) FROM astros WHERE coord='A00:00:00:01'")
+check "astro wormhole date sentinel stays 0 (no date on page)" 0 "$DBASE"
 
 note "4. dataupload: system (nested astros)"
 upload '[{"request":{"mode":"system","system":"A00:00:00","hasEyes":true,"astro0":{"coord":"A00:00:00:01","terrain":"Metalic"},"astro1":{"coord":"A00:00:00:02","terrain":"Rocky"},"sendingPlayerId":4242}}]' >/dev/null
@@ -177,7 +186,7 @@ note "14. capture_events lossless log"
 N=$($DB "SELECT COUNT(DISTINCT mode) FROM capture_events")
 echo "  distinct modes captured: $N"
 N=$($DB "SELECT COUNT(*) FROM capture_events")
-check "capture_events total rows (+14 = 13 modes + 1 fleet re-sighting)" $((CAP_BEFORE+14)) "$N"
+check "capture_events total rows (+15 = 14 modes + 1 fleet re-sighting)" $((CAP_BEFORE+15)) "$N"
 
 note "15. parse/script query handlers (empty-but-valid)"
 R=$(curl -s -X POST "$BASE/archangel/parse/script" --data-urlencode 'data={"request":{"mode":"jg_search","sloc":"A00:00:00:00","dloc":"A00:00:00:05","method":"closest"}}')
