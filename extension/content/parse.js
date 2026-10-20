@@ -411,6 +411,7 @@ var Parser = function() {
 
       var whPresent = obj.find('center:contains(Wormhole)');
       var warmhole = 0;
+      var hasWormhole = (whPresent.length > 0) ? 1 : 0;
       if (whPresent.length) {
         var dt = ctF.GetDateFromString(whPresent.text());
         if (dt) warmhole = dt.date.getFullYear() + '-' + (dt.date.getMonth() + 1) + '-' + dt.date.getDate();
@@ -438,6 +439,7 @@ var Parser = function() {
           last_pillaged: last_pillaged,
           uc_stability: stability,
           wormHole: warmhole,
+          hasWormhole: hasWormhole,
           jumpgate: jgLevel,
           universeId: universeId,
           angelVersion: econs.AngelVersion,
@@ -532,6 +534,7 @@ var Parser = function() {
 
       // --- staleness ----------------------------------------------------
       var staleness = safeMatch(root.find('center:contains(Recorded data from)').text(), /Recorded data from (.+?)\./, [1]);
+      var hasWormhole = (root.find('table:contains(Wormhole)').length > 0) ? 1 : 0;
 
       // --- structures + defenses ---------------------------------------
       var base_name = safeMatch(root.find('th.dropcap').first().text(), /\S.*/, [0]).trim();
@@ -584,6 +587,7 @@ var Parser = function() {
           structure_levels: structure_levels,
           defenses: defenses,
           recorded_days_ago: staleness,
+          hasWormhole: hasWormhole,
           universeId: universeId,
           sendingPlayerId: ctG.SendingPlayerId
         }
@@ -605,7 +609,13 @@ var Parser = function() {
     var db, items, terrain;
     try {
       var didUpload = false;
-      var isFoggy = $('center:contains(Recorded data from)').length > 0;
+      var isFoggy = false;
+      if (msg == null) {
+        isFoggy = $('center:contains(Recorded data from)').length > 0;
+      } else {
+        isFoggy = $(msg).filter('center:contains(Recorded data from)').length > 0
+          || $('<div>').append($(msg)).find('center:contains(Recorded data from)').length > 0;
+      }
       if (isFoggy) parse.log('Is FOGGY');
       if (msg != null) {
         if (parse.BadDoc(msg, 'parseAstro')) return;
@@ -652,6 +662,7 @@ var Parser = function() {
       var req = {};
       if (['gas giant', 'asteroid belt'].indexOf(terrain) == -1) {
         var warmhole = 0;
+        var hasWormhole = (whPresent.length > 0) ? 1 : 0;
         if (whPresent.length) {
           var whText = $(whPresent).find("center").text();
           if (whText != '') {
@@ -724,6 +735,7 @@ var Parser = function() {
               terrain: terrain,
               debris: debris,
               wormHole: warmhole,
+              hasWormhole: hasWormhole,
               angelVersion: econs.AngelVersion,
               hasEyes: (terrain == 'unknown') ? false : true
             }
@@ -741,6 +753,7 @@ var Parser = function() {
               terrain: terrain,
               debris: debris,
               wormHole: warmhole,
+              hasWormhole: hasWormhole,
               sendingPlayerId: ctG.SendingPlayerId,
               angelVersion: econs.AngelVersion,
               dsisAutoScout: ctG.DsisAutoScout
